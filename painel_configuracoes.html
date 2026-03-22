@@ -1190,7 +1190,7 @@ async function salvarConfiguracoes() {
 
   try {
     await callBX24('app.option.set', {
-      options: { field_mapping: state.fieldMapping }
+      options: { field_mapping: JSON.stringify(state.fieldMapping) }
     });
     state.hasChanges = false;
     document.getElementById('unsaved-indicator').classList.remove('visible');

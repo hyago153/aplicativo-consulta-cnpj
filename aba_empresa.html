@@ -1594,7 +1594,11 @@ async function loadInitialData() {
     // ── Processar options ──
     if (batchResult.options && batchResult.options.data) {
       const opts = batchResult.options.data;
-      STATE.fieldMapping  = opts.field_mapping || {};
+      let fieldMapping = opts.field_mapping || {};
+      if (typeof fieldMapping === 'string') {
+        try { fieldMapping = JSON.parse(fieldMapping); } catch (_) { fieldMapping = {}; }
+      }
+      STATE.fieldMapping  = fieldMapping;
       STATE.installSuffix = opts.app_install_suffix || null;
 
       // Se não há mapeamento configurado, usar mapeamento padrão com base no sufixo
