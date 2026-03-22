@@ -639,16 +639,7 @@
       <div class="progress-label" id="main-progress-label">0%</div>
 
       <div class="step-list">
-        <div class="step-item" id="step-admin">
-          <div class="step-icon idle" id="step-admin-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-          </div>
-          <div class="step-text">
-            <strong>Verificando permissões</strong>
-            <span id="step-admin-sub">Confirmando acesso de administrador</span>
-          </div>
-          <span class="step-badge idle" id="step-admin-badge">Aguardando</span>
-        </div>
+
 
         <div class="step-item" id="step-suffix">
           <div class="step-icon idle" id="step-suffix-icon">
@@ -948,28 +939,6 @@ async function startInstall() {
 
   await new Promise(resolve => BX24.init(resolve));
 
-  setLoadingMsg('Verificando permissões de administrador');
-
-  // BX24.isAdmin() pode não estar pronto imediatamente em apps estáticos.
-  // Tenta até 3x com delay crescente antes de recorrer à API.
-  let isAdmin = false;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (BX24.isAdmin()) { isAdmin = true; break; }
-    await sleep(600 * (attempt + 1)); // 600ms → 1200ms → 1800ms
-  }
-  if (!isAdmin) {
-    // Fallback: app.option.get só funciona para apps com acesso admin
-    try {
-      await callBX24('app.option.get', { options: ['__ping'] });
-      isAdmin = true;
-    } catch (e) { isAdmin = false; }
-  }
-
-  if (!isAdmin) {
-    showScreen('screen-error-admin');
-    return;
-  }
-
   setLoadingMsg('Verificando instalação anterior');
 
   // Parallel: check existing options + existing fields
@@ -1031,18 +1000,7 @@ async function runInstallFlow(reuseFields = false) {
   showScreen('screen-installing');
   setProgress(0);
 
-  // ── Step 1: Admin check ───────────────────────────────
-  setStepState('admin', 'running', 'Confirmando permissões...');
-  await sleep(200);
-  if (!BX24.isAdmin()) {
-    setStepState('admin', 'error', 'Sem permissão de administrador');
-    showScreen('screen-error-admin');
-    return;
-  }
-  setStepState('admin', 'done', 'Administrador confirmado');
-  setProgress(10);
-
-  // ── Step 2: Suffix ────────────────────────────────────
+  // ── Step 1: Suffix ────────────────────────────────────
   setStepState('suffix', 'running', 'Gerando sufixo único...');
   await sleep(150);
 
