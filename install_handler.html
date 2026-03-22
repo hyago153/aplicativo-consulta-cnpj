@@ -750,12 +750,8 @@
 
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-value" id="stat-fields-p">—</div>
-          <div class="stat-label">Campos criados</div>
-        </div>
-        <div class="stat-card">
           <div class="stat-value warn" id="stat-failed-p">—</div>
-          <div class="stat-label">Com falhas</div>
+          <div class="stat-label">Abas com falha</div>
         </div>
         <div class="stat-card">
           <div class="stat-value" id="stat-suffix-p" style="font-size:18px;">—</div>
@@ -1114,33 +1110,44 @@ async function runInstallFlow(reuseFields = false) {
     },
   ];
 
-  // Extrai a URL base do app a partir da URL atual (sem query string nem nome do arquivo)
+  // URL base: usa window.location sem query string nem nome do arquivo
   const appBaseUrl = window.location.href.split('?')[0].replace(/[^\/]*$/, '');
+  appendFieldLog(`[info] base URL: ${appBaseUrl}`, 'ok');
+
+  // Lista placements já registrados para este app (sem parâmetros — placement.get não filtra)
+  let registeredPlacements = [];
+  try {
+    const allRegistered = await callBX24('placement.get', {});
+    registeredPlacements = Array.isArray(allRegistered) ? allRegistered.map(p => p.PLACEMENT) : [];
+  } catch (e) { registeredPlacements = []; }
 
   let placementErrors = 0;
 
   for (const pl of PLACEMENTS) {
+    const handlerUrl = appBaseUrl + pl.url;
     try {
-      // Check if already registered
-      let alreadyRegistered = false;
-      try {
-        const existing = await callBX24('placement.get', { placement: pl.placement });
-        alreadyRegistered = Array.isArray(existing) && existing.some(p => p.PLACEMENT === pl.placement);
-      } catch (e) { alreadyRegistered = false; }
-
-      if (!alreadyRegistered) {
-        await callBX24('placement.bind', {
-          PLACEMENT: pl.placement,
-          HANDLER: appBaseUrl + pl.url,
-          TITLE: pl.title,
-          DESCRIPTION: pl.description,
-        });
+      // Se já registrado, faz unbind primeiro para garantir URL atualizada
+      if (registeredPlacements.includes(pl.placement)) {
+        try {
+          await callBX24('placement.unbind', {
+            PLACEMENT: pl.placement,
+            HANDLER: handlerUrl,
+          });
+        } catch (ubErr) { /* ignora erro de unbind */ }
       }
-      appendFieldLog(`✓ Aba ${pl.placement} registrada`, 'ok');
+
+      await callBX24('placement.bind', {
+        PLACEMENT: pl.placement,
+        HANDLER: handlerUrl,
+        TITLE: pl.title,
+        DESCRIPTION: pl.description,
+      });
+      appendFieldLog(`✓ ${pl.placement}`, 'ok');
     } catch (e) {
+      const errMsg = (e && (e.error_description || e.message || JSON.stringify(e))) || String(e);
       placementErrors++;
       g.placementPending = true;
-      appendFieldLog(`✗ Falha ao registrar ${pl.placement}`, 'fail');
+      appendFieldLog(`✗ ${pl.placement}: ${errMsg}`, 'fail');
     }
   }
 
@@ -1191,9 +1198,7 @@ function showSuccessConclusion() {
 }
 
 function showPartialConclusion({ blockedBy }) {
-  const fieldCount = FIELD_DEFINITIONS.length - g.failedFields.length;
-  document.getElementById('stat-fields-p').textContent = fieldCount;
-  document.getElementById('stat-failed-p').textContent = g.failedFields.length + (g.placementPending ? '+2' : '');
+  document.getElementById('stat-failed-p').textContent = g.placementPending ? '2' : '0';
   document.getElementById('stat-suffix-p').textContent = g.suffix ? '#' + g.suffix : 'N/A';
 
   const items = document.getElementById('pending-items');
