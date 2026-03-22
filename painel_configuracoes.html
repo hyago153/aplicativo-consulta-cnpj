@@ -822,7 +822,7 @@ async function inicializar() {
   const compFields = fieldsRes.result || {};
   state.companyFields = Object.entries(compFields)
     .filter(([k]) => !k.startsWith('UF_CRM_'))
-    .map(([k, v]) => ({ id: k, label: v.formLabel || v.listLabel || k }))
+    .map(([k, v]) => ({ id: k, label: v.title || v.formLabel || v.listLabel || k }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
   // Campos UF_CRM_
