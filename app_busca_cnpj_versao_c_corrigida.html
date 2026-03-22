@@ -1,0 +1,431 @@
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --libe-green: #0bbf7e;
+  --libe-dark: #0c021c;
+  --libe-blue: #59abed;
+  --libe-yellow: #ffb317;
+  --libe-card: #140a28;
+  --libe-card2: #1a0f33;
+  --libe-border: rgba(11,191,126,0.18);
+  --libe-border-strong: rgba(11,191,126,0.4);
+  --libe-text: #f0eaf8;
+  --libe-muted: rgba(240,234,248,0.55);
+  font-family: 'Poppins', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.vc {
+  background: var(--libe-dark);
+  min-height: 100vh;
+  color: var(--libe-text);
+  padding: 24px;
+  font-family: 'Poppins', sans-serif;
+}
+.vc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.vc-title-block h1 { font-size: 17px; font-weight: 700; color: var(--libe-text); display: flex; align-items: center; gap: 8px; }
+.vc-title-block h1 .arrow { color: var(--libe-green); }
+.vc-title-block p { font-size: 11px; color: var(--libe-muted); margin-top: 2px; }
+.vc-progress {
+  background: rgba(11,191,126,.1);
+  border: 1px solid var(--libe-border-strong);
+  border-radius: 8px;
+  padding: 8px 14px;
+  text-align: center;
+}
+.vc-progress-num { font-size: 18px; font-weight: 700; color: var(--libe-green); line-height: 1; }
+.vc-progress-label { font-size: 9px; font-weight: 600; color: var(--libe-muted); text-transform: uppercase; letter-spacing: .08em; }
+.vc-progress-bar { width: 80px; height: 4px; background: var(--libe-border); border-radius: 2px; margin: 4px auto 0; overflow: hidden; }
+.vc-progress-fill { height: 100%; width: 72%; background: var(--libe-green); border-radius: 2px; }
+
+.vc-status-row { display: flex; gap: 10px; margin-bottom: 18px; }
+.vc-status-pill {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--libe-card);
+  border: 1px solid var(--libe-border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px; font-weight: 500; color: var(--libe-text);
+}
+.vc-status-pill.active { border-color: rgba(11,191,126,.5); }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-green { background: var(--libe-green); box-shadow: 0 0 0 3px rgba(11,191,126,.2); }
+.vc-repair-pill {
+  background: rgba(89,171,237,.12);
+  border: 1px solid rgba(89,171,237,.4);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px; font-weight: 600; color: var(--libe-blue);
+  cursor: pointer;
+  transition: background .2s;
+  font-family: 'Poppins', sans-serif;
+}
+.vc-repair-pill:hover { background: rgba(89,171,237,.2); }
+
+.vc-banner {
+  background: rgba(255,179,23,.07);
+  border: 1px solid rgba(255,179,23,.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 11.5px; color: var(--libe-text);
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px; line-height: 1.5;
+}
+.vc-banner-dot { width: 6px; height: 6px; background: var(--libe-yellow); border-radius: 50%; flex-shrink: 0; }
+.vc-banner strong { color: var(--libe-yellow); }
+
+.vc-group { margin-bottom: 18px; }
+.vc-group-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px; padding: 8px 12px;
+  border-radius: 8px;
+}
+.vc-group-header.dados { background: rgba(11,191,126,.08); border: 1px solid rgba(11,191,126,.15); }
+.vc-group-header.endereco { background: rgba(89,171,237,.08); border: 1px solid rgba(89,171,237,.2); }
+.vc-group-header.contato { background: rgba(255,179,23,.07); border: 1px solid rgba(255,179,23,.15); }
+.vc-group-icon { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.vc-group-icon.dados { background: rgba(11,191,126,.2); color: var(--libe-green); }
+.vc-group-icon.endereco { background: rgba(89,171,237,.2); color: var(--libe-blue); }
+.vc-group-icon.contato { background: rgba(255,179,23,.18); color: var(--libe-yellow); }
+.vc-group-name { font-size: 12px; font-weight: 600; }
+.vc-group-name.dados { color: var(--libe-green); }
+.vc-group-name.endereco { color: var(--libe-blue); }
+.vc-group-name.contato { color: var(--libe-yellow); }
+.vc-group-count { font-size: 10px; color: var(--libe-muted); margin-left: auto; }
+
+.vc-group-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.vc-card {
+  background: var(--libe-card);
+  border-radius: 10px;
+  padding: 11px 13px;
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--libe-border);
+  transition: border-color .2s;
+}
+.vc-card:hover { border-color: var(--libe-border-strong); }
+.vc-card-info { flex: 0 0 auto; min-width: 96px; }
+.vc-card-label { font-size: 11px; font-weight: 600; color: var(--libe-text); }
+.badge-o { font-size: 8px; font-weight: 700; color: var(--libe-green); letter-spacing: .08em; text-transform: uppercase; }
+.vc-card-right { flex: 1; display: flex; gap: 6px; align-items: center; min-width: 0; }
+
+/* Select customizado com nome visível */
+.vc-select-wrap {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+.vc-select-display {
+  background: #0e0820;
+  border: 1px solid var(--libe-border);
+  border-radius: 7px;
+  color: var(--libe-text);
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  padding: 6px 24px 6px 8px;
+  cursor: pointer;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex; align-items: center;
+  transition: border-color .2s;
+  user-select: none;
+  position: relative;
+}
+.vc-select-display.not-save { color: var(--libe-muted); font-style: italic; }
+.vc-select-display::after {
+  content: '▾';
+  position: absolute;
+  right: 7px;
+  font-size: 9px;
+  color: var(--libe-muted);
+}
+.vc-select-display:hover { border-color: var(--libe-border-strong); }
+
+/* hint interno com ID abaixo */
+.vc-field-hint {
+  font-size: 9px;
+  color: var(--libe-muted);
+  margin-top: 2px;
+  padding-left: 1px;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-plus-vc {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(89,171,237,.15);
+  border: 1px solid rgba(89,171,237,.3);
+  color: var(--libe-blue);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  transition: background .2s, transform .15s;
+  line-height: 1; padding-bottom: 1px;
+  font-family: 'Poppins', sans-serif;
+}
+.btn-plus-vc:hover { background: rgba(89,171,237,.3); transform: scale(1.1); }
+.btn-plus-vc .tooltip {
+  position: absolute;
+  bottom: 34px; right: 0;
+  background: #1e0d3e;
+  border: 1px solid var(--libe-border-strong);
+  color: var(--libe-text);
+  font-size: 10.5px; padding: 7px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+  width: 230px; text-align: left; line-height: 1.5; z-index: 10;
+}
+.btn-plus-vc .tooltip strong { color: var(--libe-green); }
+.btn-plus-vc:hover .tooltip { opacity: 1; }
+
+.vc-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 14px; border-top: 1px solid var(--libe-border);
+}
+.vc-footer-note { font-size: 10.5px; color: var(--libe-muted); }
+.vc-save-btn {
+  background: var(--libe-green); color: var(--libe-dark);
+  border: none; font-family: 'Poppins', sans-serif;
+  font-size: 13px; font-weight: 700;
+  padding: 10px 24px; border-radius: 8px; cursor: pointer;
+  transition: filter .2s, transform .15s;
+}
+.vc-save-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+/* callout explicativo */
+.callout {
+  background: rgba(11,191,126,.06);
+  border: 1px solid rgba(11,191,126,.2);
+  border-left: 3px solid var(--libe-green);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--libe-muted);
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+.callout strong { color: var(--libe-green); }
+</style>
+
+<div class="vc">
+  <div class="vc-header">
+    <div class="vc-title-block">
+      <h1><span class="arrow">↗</span> App Busca CNPJ</h1>
+      <p>Mapeamento por categoria · Empresa (CRM_COMPANY)</p>
+    </div>
+    <div class="vc-progress">
+      <div class="vc-progress-num">13/18</div>
+      <div class="vc-progress-label">mapeados</div>
+      <div class="vc-progress-bar"><div class="vc-progress-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="vc-status-row">
+    <div class="vc-status-pill active"><span class="dot dot-green"></span> Negócio · Ativo</div>
+    <div class="vc-status-pill active"><span class="dot dot-green"></span> Empresa · Ativo</div>
+    <button class="vc-repair-pill">↻ Reparar Instalação</button>
+  </div>
+
+  <div class="vc-banner">
+    <div class="vc-banner-dot"></div>
+    <div><strong>Configuração Automática:</strong> Campos padrão criados. Mantenha-os selecionados para funcionamento ideal.</div>
+  </div>
+
+  <div class="callout">
+    O dropdown exibe o <strong>nome visível do campo</strong> no padrão <strong>[Campo - App Busca CNPJ]</strong>. O ID interno (ex: UF_CRM_CNPJ_FAN_42) aparece apenas como referência discreta abaixo.
+  </div>
+
+  <!-- Dados Fiscais -->
+  <div class="vc-group">
+    <div class="vc-group-header dados">
+      <div class="vc-group-icon dados">✦</div>
+      <span class="vc-group-name dados">Dados Fiscais</span>
+      <span class="vc-group-count">5 campos</span>
+    </div>
+    <div class="vc-group-body">
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Razão Social</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">Razão Social - App Busca CNPJ</div>
+            <div class="vc-field-hint">TITLE (nativo)</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Razão Social - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">CNPJ</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">CNPJ - App Busca CNPJ</div>
+            <div class="vc-field-hint">UF_CRM_CNPJ_NUM_42</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[CNPJ - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Nome Fantasia</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">Nome Fantasia - App Busca CNPJ</div>
+            <div class="vc-field-hint">UF_CRM_CNPJ_FAN_42</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Nome Fantasia - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Capital Social</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">Capital Social - App Busca CNPJ</div>
+            <div class="vc-field-hint">UF_CRM_CNPJ_CAP_42</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Capital Social - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Sit. Cadastral</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display not-save">— Não Salvar —</div>
+            <div class="vc-field-hint" style="opacity:0;">·</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Situação Cadastral - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Endereço -->
+  <div class="vc-group">
+    <div class="vc-group-header endereco">
+      <div class="vc-group-icon endereco">⊕</div>
+      <span class="vc-group-name endereco">Endereço</span>
+      <span class="vc-group-count">6 campos</span>
+    </div>
+    <div class="vc-group-body">
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">CEP</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">CEP - App Busca CNPJ</div>
+            <div class="vc-field-hint">UF_CRM_CNPJ_CEP_42</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[CEP - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Cidade</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">Cidade - App Busca CNPJ</div>
+            <div class="vc-field-hint">UF_CRM_CNPJ_CID_42</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Cidade - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Estado (UF)</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">Estado (UF) - App Busca CNPJ</div>
+            <div class="vc-field-hint">UF_CRM_CNPJ_UF_42</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Estado (UF) - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Logradouro</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">Logradouro - App Busca CNPJ</div>
+            <div class="vc-field-hint">UF_CRM_CNPJ_LOG_42</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Logradouro - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Bairro</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">Bairro - App Busca CNPJ</div>
+            <div class="vc-field-hint">UF_CRM_CNPJ_BAI_42</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Bairro - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Nº / Complemento</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display not-save">— Não Salvar —</div>
+            <div class="vc-field-hint" style="opacity:0;">·</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Nº/Complemento - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Contato -->
+  <div class="vc-group">
+    <div class="vc-group-header contato">
+      <div class="vc-group-icon contato">◎</div>
+      <span class="vc-group-name contato">Contato</span>
+      <span class="vc-group-count">2 campos</span>
+    </div>
+    <div class="vc-group-body">
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">Telefone</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display">Telefone - App Busca CNPJ</div>
+            <div class="vc-field-hint">UF_CRM_CNPJ_TEL_42</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[Telefone - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+      <div class="vc-card">
+        <div class="vc-card-info"><div class="badge-o">ORIGEM</div><div class="vc-card-label">E-mail</div></div>
+        <div class="vc-card-right">
+          <div class="vc-select-wrap">
+            <div class="vc-select-display not-save">— Não Salvar —</div>
+            <div class="vc-field-hint" style="opacity:0;">·</div>
+          </div>
+          <button class="btn-plus-vc">+<span class="tooltip">Criar campo <strong>[E-mail - App Busca CNPJ]</strong> em Empresa no Bitrix24?</span></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="vc-footer">
+    <span class="vc-footer-note">* Alterações são salvas automaticamente no servidor do app.</span>
+    <button class="vc-save-btn">Salvar Alterações</button>
+  </div>
+</div>
