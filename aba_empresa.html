@@ -1638,12 +1638,6 @@ async function loadInitialData() {
       STATE.fieldMapping  = fieldMapping;
       STATE.installSuffix = opts.app_install_suffix || null;
 
-      // Se nenhum campo tem field_id definido, usar mapeamento padrão com base no sufixo
-      const hasValidMapping = Object.values(STATE.fieldMapping).some(m => m && m.field_id);
-      if (!hasValidMapping) {
-        STATE.fieldMapping = buildDefaultMappingFromSuffix(STATE.installSuffix);
-      }
-
       // Cache desta empresa
       const cacheKey = `company_${STATE.companyId}_last_query`;
       const cacheObj = opts[cacheKey];
@@ -1655,6 +1649,11 @@ async function loadInitialData() {
         }
         // Cache expirado: banner NÃO é exibido, mas dados salvos no CRM prevalecem
       }
+    }
+
+    // Fallback sempre aplicado, independente de falha no carregamento das options
+    if (!Object.values(STATE.fieldMapping).some(m => m && m.field_id)) {
+      STATE.fieldMapping = buildDefaultMappingFromSuffix(STATE.installSuffix);
     }
 
     // Verificar se mapeamento possui ao menos um campo com field_id definido
@@ -1890,6 +1889,24 @@ async function doSave() {
   $('btn-salvar-label').textContent = 'Salvando...';
 
   try {
+    // Garantir field_mapping atualizado diretamente do Bitrix24 antes de salvar
+    try {
+      const freshOpts = await b24Call('app.option.get', {});
+      if (freshOpts && freshOpts.field_mapping) {
+        let fm = freshOpts.field_mapping;
+        if (typeof fm === 'string') { try { fm = JSON.parse(fm); } catch (_) { fm = null; } }
+        if (fm && Object.values(fm).some(m => m && m.field_id)) {
+          STATE.fieldMapping = fm;
+          if (freshOpts.app_install_suffix) STATE.installSuffix = freshOpts.app_install_suffix;
+        }
+      }
+    } catch (_) { /* usa STATE.fieldMapping carregado na inicialização */ }
+
+    // Fallback final se ainda sem mapeamento válido
+    if (!Object.values(STATE.fieldMapping).some(m => m && m.field_id)) {
+      STATE.fieldMapping = buildDefaultMappingFromSuffix(STATE.installSuffix);
+    }
+
     const payload = buildPayload(STATE.lastQueryData);
 
     if (Object.keys(payload).length === 0) {
