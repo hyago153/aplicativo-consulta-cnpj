@@ -1477,7 +1477,12 @@ async function loadInitialData() {
 
   try {
     // 1. Contexto do placement → COMPANY_ID (direto, sem mediar por Deal)
-    const ctx = BX24.placement.getContext();
+    let ctx = null;
+    try {
+      ctx = BX24.placement.getContext();
+    } catch (e) {
+      console.warn('[BuscaCNPJ:Empresa] getContext() falhou, usando fallback:', e);
+    }
     STATE.companyId = ctx && ctx.ID ? String(ctx.ID) : null;
 
     if (!STATE.companyId) {
@@ -1486,11 +1491,22 @@ async function loadInitialData() {
       return;
     }
 
-    // 2. Carregar em paralelo: options + company fields
-    const batchResult = await b24Batch({
-      options: { method: 'app.option.get', params: {} },
-      company: { method: 'crm.company.get', params: { id: STATE.companyId } },
-    });
+    // 2. Carregar em paralelo: options + company fields (com fallback para chamadas individuais)
+    let batchResult = {};
+    try {
+      batchResult = await b24Batch({
+        options: ['app.option.get', {}],
+        company: ['crm.company.get', { id: STATE.companyId }],
+      });
+    } catch (e) {
+      console.warn('[BuscaCNPJ:Empresa] callBatch falhou, usando Promise.all:', e);
+      const [optsData, companyData] = await Promise.all([
+        b24Call('app.option.get', {}).catch(() => null),
+        b24Call('crm.company.get', { id: STATE.companyId }).catch(() => null),
+      ]);
+      if (optsData)    batchResult.options = { data: optsData };
+      if (companyData) batchResult.company = { data: companyData };
+    }
 
     // ── Processar options ──
     if (batchResult.options && batchResult.options.data) {
