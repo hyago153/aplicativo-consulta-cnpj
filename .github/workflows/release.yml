@@ -1,0 +1,43 @@
+name: Gerar ZIP do App
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Criar ZIP do app
+        run: |
+          zip app-busca-cnpj.zip \
+            index.html \
+            install_handler.html \
+            painel_consulta.html \
+            painel_configuracoes.html \
+            aba_empresa.html \
+            .nojekyll
+
+      - name: Apagar release anterior (latest)
+        run: |
+          gh release delete latest --yes 2>/dev/null || true
+          git push --delete origin latest 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publicar nova release com o ZIP
+        run: |
+          gh release create latest app-busca-cnpj.zip \
+            --title "App Busca CNPJ — versão atual" \
+            --notes "ZIP gerado automaticamente a partir do branch main. Faça o upload deste arquivo no Bitrix24 em: Aplicativos → Aplicativo local → Estático." \
+            --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
