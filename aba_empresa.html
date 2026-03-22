@@ -1575,16 +1575,17 @@ async function loadInitialData() {
     }
 
     // 2. Carregar em paralelo: options + company fields (com fallback para chamadas individuais)
+    const optionsKeys = ['field_mapping', 'app_install_suffix'];
     let batchResult = {};
     try {
       batchResult = await b24Batch({
-        options: ['app.option.get', {}],
+        options: ['app.option.get', { options: optionsKeys }],
         company: ['crm.company.get', { id: STATE.companyId }],
       });
     } catch (e) {
       console.warn('[BuscaCNPJ:Empresa] callBatch falhou, usando Promise.all:', e);
       const [optsData, companyData] = await Promise.all([
-        b24Call('app.option.get', {}).catch(() => null),
+        b24Call('app.option.get', { options: optionsKeys }).catch(() => null),
         b24Call('crm.company.get', { id: STATE.companyId }).catch(() => null),
       ]);
       if (optsData)    batchResult.options = { data: optsData };
