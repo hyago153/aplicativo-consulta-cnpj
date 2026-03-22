@@ -584,7 +584,10 @@
         <svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
       </div>
       <h2>Acesso Restrito</h2>
-      <p>A instalação do App Busca CNPJ requer permissões de <strong>administrador</strong> do Bitrix24.<br><br>Solicite ao administrador da conta que realize a instalação.</p>
+      <p>A instalação do App Busca CNPJ requer permissões de <strong>administrador</strong> do Bitrix24.<br><br>Se você é administrador, pode haver um atraso de inicialização — tente novamente.</p>
+      <div class="btn-row" style="justify-content:center; margin-top:20px;">
+        <button class="btn btn-primary" onclick="startInstall()">Tentar novamente</button>
+      </div>
     </div>
   </div>
 
@@ -663,23 +666,10 @@
             <svg viewBox="0 0 24 24"><path d="M14 6l-1-2H5v17h2v-7h5l1 2h7V6h-6zm4 8h-4l-1-2H7V6h5l1 2h5v6z"/></svg>
           </div>
           <div class="step-text">
-            <strong>Criando campos personalizados</strong>
-            <span id="step-fields-sub">24 campos em CRM_COMPANY</span>
+            <strong>Campos personalizados</strong>
+            <span id="step-fields-sub">Criados manualmente no Painel de Configurações</span>
           </div>
           <span class="step-badge idle" id="step-fields-badge">Aguardando</span>
-        </div>
-
-        <div id="field-progress-container" style="display:none;">
-          <div class="field-progress">
-            <div class="field-progress-label">
-              <span id="field-progress-text">Criando campos...</span>
-              <span id="field-progress-count">0 / 23</span>
-            </div>
-            <div class="progress-bar-wrap" style="margin-bottom:8px;">
-              <div class="progress-bar-fill" id="field-progress-bar"></div>
-            </div>
-            <div class="field-log" id="field-log"></div>
-          </div>
         </div>
 
         <div class="step-item" id="step-mapping">
@@ -715,14 +705,10 @@
           <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
         </div>
         <h2>App instalado com sucesso!</h2>
-        <p>Todos os componentes foram configurados e estão prontos para uso.</p>
+        <p>As abas foram registradas. Agora acesse o <strong>Painel de Configurações</strong> para criar os campos e mapear os dados do CNPJ.</p>
       </div>
 
       <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="stat-fields">24</div>
-          <div class="stat-label">Campos criados</div>
-        </div>
         <div class="stat-card">
           <div class="stat-value">2</div>
           <div class="stat-label">Abas registradas</div>
@@ -965,6 +951,7 @@ async function startInstall() {
   setLoadingMsg('Inicializando SDK do Bitrix24');
 
   await new Promise(resolve => BX24.init(resolve));
+  await sleep(400); // aguarda BX24 estabilizar estado de admin no modo estático
 
   setLoadingMsg('Verificando permissões de administrador');
 
@@ -1068,83 +1055,9 @@ async function runInstallFlow(reuseFields = false) {
     return;
   }
 
-  // ── Step 3: Fields ────────────────────────────────────
-  setStepState('fields', 'running', `Criando 23 campos em CRM_COMPANY...`);
-  document.getElementById('field-progress-container').style.display = 'block';
-  setProgress(25);
-
-  const fieldsToCreate = reuseFields ? [] : FIELD_DEFINITIONS;
-  let createdCount = reuseFields ? FIELD_DEFINITIONS.length : 0;
-
-  if (!reuseFields) {
-    const total = FIELD_DEFINITIONS.length;
-    let done = 0;
-
-    // Process in batches of 5 (2 calls per field = add + hint update)
-    for (let i = 0; i < FIELD_DEFINITIONS.length; i += 5) {
-      const batch = FIELD_DEFINITIONS.slice(i, Math.min(i + 5, FIELD_DEFINITIONS.length));
-
-      await Promise.allSettled(batch.map(async (fd) => {
-        const fieldName = `UF_CRM_${fd.base}_${g.suffix}`;
-        const labelObj = { ru: `${fd.label} - App Busca CNPJ` };
-
-        try {
-          const newField = await callBX24('crm.company.userfield.add', {
-            fields: {
-              ENTITY_ID: 'CRM_COMPANY',
-              FIELD_NAME: `${fd.base}_${g.suffix}`,
-              USER_TYPE_ID: fd.type,
-              EDIT_FORM_LABEL: labelObj,
-              LIST_COLUMN_LABEL: labelObj,
-              SHOW_IN_LIST: 'Y',
-              SHOW_ALWAYS: 'Y',
-              SETTINGS: { SHOW_FIELD_HINT: 'Y' },
-            }
-          });
-
-          g.fieldMap[fd.base] = fieldName;
-          createdCount++;
-
-          // Update HINT (2nd call per field, silent failure)
-          try {
-            await callBX24('crm.company.userfield.update', {
-              id: newField,
-              fields: {
-                HELP_MESSAGE: { ru: fd.hint }
-              }
-            });
-          } catch (hintErr) {
-            g.hintPending[fieldName] = fd.hint;
-          }
-
-          appendFieldLog(`✓ ${fieldName}`, 'ok');
-        } catch (err) {
-          g.failedFields.push({ name: fieldName, error: String(err) });
-          appendFieldLog(`✗ ${fieldName} — falhou`, 'fail');
-        }
-
-        done++;
-        updateFieldSubProgress(done, total);
-        const fieldProgress = 25 + (done / total) * 35;
-        setProgress(fieldProgress);
-      }));
-    }
-  } else {
-    // Reuse: build fieldMap from orphan fields
-    g.orphanFields.forEach(f => {
-      const base = f.FIELD_NAME.replace(/UF_CRM_/, '').replace(/_\d+$/, '');
-      g.fieldMap[base] = f.FIELD_NAME;
-    });
-    appendFieldLog('✓ Campos existentes reutilizados', 'ok');
-    setProgress(60);
-  }
-
-  const fieldState = g.failedFields.length === 0 ? 'done' : 'warn';
-  const fieldSub = g.failedFields.length === 0
-    ? `${createdCount} campos criados com sucesso`
-    : `${createdCount} criados, ${g.failedFields.length} com falha`;
-  setStepState('fields', fieldState, fieldSub);
-  setProgress(62);
+  // ── Step 3: Fields (informativo — campos criados manualmente no Painel de Configurações)
+  setStepState('fields', 'done', 'Use o botão "+" no Painel de Configurações para criar os campos');
+  setProgress(55);
 
   // ── Step 4: Mapping ───────────────────────────────────
   setStepState('mapping', 'running', 'Salvando configuração padrão...');
@@ -1236,33 +1149,28 @@ async function runInstallFlow(reuseFields = false) {
   if (hasPendencies) {
     showPartialConclusion({});
   } else {
-    showSuccessConclusion(createdCount);
+    showSuccessConclusion();
   }
 }
 
 function buildDefaultMapping() {
+  // Mapeamento inicial: Razão Social usa campo nativo TITLE.
+  // Todos os outros ficam sem campo (field_id: null) até o admin criar
+  // e mapear via Painel de Configurações.
   const map = {
     razao_social: { entity: 'company', field_id: 'TITLE' }
   };
 
   FIELD_DEFINITIONS.forEach(fd => {
-    const fieldName = `UF_CRM_${fd.base}_${g.suffix}`;
     const jsonKey = JSON_MAPPING[fd.base];
     if (!jsonKey) return;
-
-    const notSaved = NOT_SAVED_BY_DEFAULT.includes(fd.base);
-    map[jsonKey] = {
-      entity: 'company',
-      field_id: notSaved ? null : fieldName,
-      label: fd.label,
-    };
+    map[jsonKey] = { entity: 'company', field_id: null, label: fd.label };
   });
 
   return map;
 }
 
-function showSuccessConclusion(fieldCount) {
-  document.getElementById('stat-fields').textContent = fieldCount;
+function showSuccessConclusion() {
   document.getElementById('stat-suffix').textContent = '#' + g.suffix;
   showScreen('screen-success');
   startCountdown();
