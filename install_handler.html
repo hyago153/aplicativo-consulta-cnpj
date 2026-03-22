@@ -1177,15 +1177,18 @@ async function runInstallFlow(reuseFields = false) {
       placement: 'CRM_DEAL_DETAIL_TAB',
       title: 'Busca CNPJ',
       description: 'Consultar e salvar dados da Receita Federal',
-      url: '/painel_consulta.html',
+      url: 'painel_consulta.html',
     },
     {
       placement: 'CRM_COMPANY_DETAIL_TAB',
       title: 'Dados CNPJ',
       description: 'Visualizar e atualizar dados de CNPJ da empresa',
-      url: '/aba_empresa.html',
+      url: 'aba_empresa.html',
     },
   ];
+
+  // Extrai a URL base do app (diretório onde estão os arquivos HTML)
+  const appBaseUrl = BX24.appOption('app_path').replace(/\/[^\/]*$/, '/');
 
   let placementErrors = 0;
 
@@ -1201,7 +1204,7 @@ async function runInstallFlow(reuseFields = false) {
       if (!alreadyRegistered) {
         await callBX24('placement.bind', {
           PLACEMENT: pl.placement,
-          HANDLER: BX24.appOption('app_path') + pl.url,
+          HANDLER: appBaseUrl + pl.url,
           TITLE: pl.title,
           DESCRIPTION: pl.description,
         });

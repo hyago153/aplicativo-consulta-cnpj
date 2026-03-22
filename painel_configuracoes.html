@@ -1262,9 +1262,15 @@ async function repararInstalacao() {
 }
 
 async function repararPlacement(placement, tipo) {
+  // Extrai a URL base do app a partir da URL atual desta página
+  const appBaseUrl = window.location.href.replace(/\/[^\/]*$/, '/');
+  const handlerMap = {
+    'CRM_DEAL_DETAIL_TAB':    appBaseUrl + 'painel_consulta.html',
+    'CRM_COMPANY_DETAIL_TAB': appBaseUrl + 'aba_empresa.html',
+  };
   await callBX24('placement.bind', {
     PLACEMENT: placement,
-    HANDLER: window.location.href,
+    HANDLER: handlerMap[placement],
     TITLE: 'App Busca CNPJ',
     DESCRIPTION: 'Consulta e salvamento de dados de CNPJ',
   });
