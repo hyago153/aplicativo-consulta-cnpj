@@ -932,6 +932,45 @@ function extrairTelefone(telefones) {
 }
 
 /* ─────────────────────────────────────────────
+   NORMALIZAR resposta BrasilAPI → formato OpenCNPJ
+───────────────────────────────────────────── */
+function normalizarBrasilAPI(d) {
+  const telStr = d.ddd_telefone_1 || d.ddd_telefone_2 || '';
+  const [ddd, ...nums] = telStr.split(' ');
+  return {
+    cnpj:                    d.cnpj,
+    razao_social:            d.razao_social,
+    nome_fantasia:           d.nome_fantasia,
+    situacao_cadastral:      d.descricao_situacao_cadastral || String(d.situacao_cadastral || ''),
+    data_situacao_cadastral: d.data_situacao_cadastral ? String(d.data_situacao_cadastral).substring(0, 10) : null,
+    matriz_filial:           d.tipo || null,
+    data_inicio_atividade:   d.data_inicio_atividade ? String(d.data_inicio_atividade).substring(0, 10) : null,
+    natureza_juridica:       d.natureza_juridica,
+    logradouro:              d.logradouro,
+    numero:                  d.numero,
+    complemento:             d.complemento,
+    bairro:                  d.bairro,
+    cep:                     d.cep,
+    uf:                      d.uf,
+    municipio:               d.municipio,
+    email:                   d.email,
+    capital_social:          d.capital_social != null ? String(d.capital_social) : null,
+    porte_empresa:           d.descricao_porte || d.porte || null,
+    opcao_simples:           d.opcao_pelo_simples === true ? 'S' : d.opcao_pelo_simples === false ? 'N' : null,
+    opcao_mei:               d.opcao_pelo_mei   === true ? 'S' : d.opcao_pelo_mei   === false ? 'N' : null,
+    telefones:               telStr ? [{ ddd: ddd || '', numero: nums.join('') || telStr, is_fax: false }] : [],
+    QSA: (d.qsa || []).map(s => ({
+      nome_socio:               s.nome_socio,
+      cnpj_cpf_socio:           s.cnpj_cpf_do_socio,
+      qualificacao_socio:       s.qualificacao_socio,
+      data_entrada_sociedade:   s.data_entrada_sociedade,
+      identificador_socio:      s.identificador_de_socio === 1 ? 'Pessoa Jurídica' : 'Pessoa Física',
+      faixa_etaria:             s.faixa_etaria,
+    })),
+  };
+}
+
+/* ─────────────────────────────────────────────
    HELPERS — Timestamp display
 ───────────────────────────────────────────── */
 function tsDisplay(ts) {
@@ -1315,18 +1354,30 @@ async function doSearch(cnpjOverride) {
   $('error-state').classList.remove('visible');
 
   try {
-    const resp = await fetch(`https://api.opencnpj.org/cnpj/${raw}`);
+    let data = null;
 
-    if (!resp.ok) {
-      let errMsg = `Erro HTTP ${resp.status}`;
-      if (resp.status === 404) errMsg = 'CNPJ não encontrado na base da Receita Federal.';
-      else if (resp.status === 429) errMsg = 'Limite de consultas atingido. Tente novamente em instantes.';
-      showError('CNPJ não encontrado', errMsg);
-      await salvarStatusBusca('Não encontrado');
-      return;
+    // Tentativa 1: OpenCNPJ
+    try {
+      const resp = await fetch(`https://api.opencnpj.org/cnpj/${raw}`);
+      if (resp.ok) data = await resp.json();
+      else console.warn(`[BuscaCNPJ] OpenCNPJ retornou ${resp.status}, tentando BrasilAPI...`);
+    } catch (e) {
+      console.warn('[BuscaCNPJ] OpenCNPJ falhou, tentando BrasilAPI...', e);
     }
 
-    const data = await resp.json();
+    // Tentativa 2: BrasilAPI (fallback)
+    if (!data) {
+      const resp2 = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`);
+      if (!resp2.ok) {
+        let errMsg = `Erro HTTP ${resp2.status}`;
+        if (resp2.status === 404) errMsg = 'CNPJ não encontrado na base da Receita Federal.';
+        else if (resp2.status === 429) errMsg = 'Limite de consultas atingido. Tente novamente em instantes.';
+        showError('CNPJ não encontrado', errMsg);
+        await salvarStatusBusca('Não encontrado');
+        return;
+      }
+      data = normalizarBrasilAPI(await resp2.json());
+    }
 
     // Normalizar CNPJ exibido
     data._cnpj_raw = raw;
