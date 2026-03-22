@@ -1440,6 +1440,50 @@ function showVisualizarState(which) {
 }
 
 /* ─────────────────────────────────────────────
+   MAPEAMENTO PADRÃO (fallback quando não configurado)
+───────────────────────────────────────────── */
+function buildDefaultMappingFromSuffix(suffix) {
+  const s = suffix || '00';
+  const CAMPOS = [
+    { key: 'razao_social',            fieldCode: null,       nativo: true,  noSaveDefault: false },
+    { key: 'cnpj',                    fieldCode: 'CNPJ_NUM', nativo: false, noSaveDefault: false },
+    { key: 'nome_fantasia',           fieldCode: 'CNPJ_FAN', nativo: false, noSaveDefault: false },
+    { key: 'situacao_cadastral',      fieldCode: 'CNPJ_SIT', nativo: false, noSaveDefault: false },
+    { key: 'data_situacao_cadastral', fieldCode: 'CNPJ_DST', nativo: false, noSaveDefault: false },
+    { key: 'capital_social',          fieldCode: 'CNPJ_CAP', nativo: false, noSaveDefault: false },
+    { key: 'porte_empresa',           fieldCode: 'CNPJ_POR', nativo: false, noSaveDefault: false },
+    { key: 'natureza_juridica',       fieldCode: 'CNPJ_NAT', nativo: false, noSaveDefault: false },
+    { key: 'data_inicio_atividade',   fieldCode: 'CNPJ_DAB', nativo: false, noSaveDefault: false },
+    { key: 'matriz_filial',           fieldCode: 'CNPJ_MTZ', nativo: false, noSaveDefault: false },
+    { key: 'opcao_simples',           fieldCode: 'CNPJ_SMP', nativo: false, noSaveDefault: true  },
+    { key: 'opcao_mei',               fieldCode: 'CNPJ_MEI', nativo: false, noSaveDefault: false },
+    { key: 'cnae_principal',          fieldCode: 'CNPJ_NAE', nativo: false, noSaveDefault: false },
+    { key: 'logradouro',              fieldCode: 'CNPJ_LOG', nativo: false, noSaveDefault: false },
+    { key: 'numero',                  fieldCode: 'CNPJ_NRO', nativo: false, noSaveDefault: false },
+    { key: 'complemento',             fieldCode: 'CNPJ_CMP', nativo: false, noSaveDefault: true  },
+    { key: 'bairro',                  fieldCode: 'CNPJ_BAI', nativo: false, noSaveDefault: false },
+    { key: 'cep',                     fieldCode: 'CNPJ_CEP', nativo: false, noSaveDefault: false },
+    { key: 'municipio',               fieldCode: 'CNPJ_CID', nativo: false, noSaveDefault: false },
+    { key: 'uf',                      fieldCode: 'CNPJ_UF',  nativo: false, noSaveDefault: false },
+    { key: 'telefone',                fieldCode: 'CNPJ_TEL', nativo: false, noSaveDefault: false },
+    { key: 'email',                   fieldCode: 'CNPJ_EML', nativo: false, noSaveDefault: true  },
+    { key: 'QSA',                     fieldCode: 'CNPJ_QSA', nativo: false, noSaveDefault: false },
+    { key: 'status_busca',            fieldCode: 'CNPJ_STS', nativo: false, noSaveDefault: false },
+  ];
+  const mapping = {};
+  for (const campo of CAMPOS) {
+    if (campo.noSaveDefault) {
+      mapping[campo.key] = { entity: 'company', field_id: null };
+    } else if (campo.nativo) {
+      mapping[campo.key] = { entity: 'company', field_id: 'TITLE' };
+    } else {
+      mapping[campo.key] = { entity: 'company', field_id: `UF_CRM_${campo.fieldCode}_${s}` };
+    }
+  }
+  return mapping;
+}
+
+/* ─────────────────────────────────────────────
    CONSTRUIR PAYLOAD para crm.company.update
 ───────────────────────────────────────────── */
 function buildPayload(data) {
@@ -1553,6 +1597,11 @@ async function loadInitialData() {
       STATE.fieldMapping  = opts.field_mapping || {};
       STATE.installSuffix = opts.app_install_suffix || null;
 
+      // Se não há mapeamento configurado, usar mapeamento padrão com base no sufixo
+      if (Object.keys(STATE.fieldMapping).length === 0) {
+        STATE.fieldMapping = buildDefaultMappingFromSuffix(STATE.installSuffix);
+      }
+
       // Cache desta empresa
       const cacheKey = `company_${STATE.companyId}_last_query`;
       const cacheObj = opts[cacheKey];
@@ -1566,8 +1615,9 @@ async function loadInitialData() {
       }
     }
 
-    // Verificar se mapeamento está configurado
-    const temMapeamento = STATE.fieldMapping && Object.keys(STATE.fieldMapping).length > 0;
+    // Verificar se mapeamento possui ao menos um campo com field_id definido
+    const temMapeamento = STATE.fieldMapping &&
+      Object.values(STATE.fieldMapping).some(m => m && m.field_id);
     if (!temMapeamento) {
       $('no-mapping-warn').classList.add('visible');
     }
