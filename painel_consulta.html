@@ -1236,6 +1236,18 @@ async function loadInitialData() {
     } catch (e) {
       console.warn('[BuscaCNPJ] getContext() falhou, usando fallback:', e);
     }
+
+    // Fallback: parse PLACEMENT_OPTIONS from URL (Bitrix24 embeds the context as query param)
+    if (!ctx || !ctx.ID) {
+      try {
+        const po = new URLSearchParams(window.location.search).get('PLACEMENT_OPTIONS');
+        if (po) {
+          const parsed = JSON.parse(decodeURIComponent(po));
+          if (parsed && parsed.ID) ctx = parsed;
+        }
+      } catch (_) {}
+    }
+
     STATE.dealId = ctx && ctx.ID ? String(ctx.ID) : null;
 
     if (!STATE.dealId) {
@@ -1263,6 +1275,16 @@ async function loadInitialData() {
     }
 
     // ── Processar options ──
+    // Se o app.option.get falhou no batch, tentar individualmente
+    if (!batchResult.options || !batchResult.options.data) {
+      try {
+        const optsData = await b24Call('app.option.get', { options: optionsKeys });
+        batchResult.options = { data: optsData };
+      } catch (e) {
+        console.warn('[BuscaCNPJ] app.option.get individual também falhou:', e);
+      }
+    }
+
     if (batchResult.options && batchResult.options.data) {
       const opts = batchResult.options.data;
       let fieldMapping = opts.field_mapping || {};

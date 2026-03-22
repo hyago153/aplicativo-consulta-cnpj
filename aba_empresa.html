@@ -1566,11 +1566,37 @@ async function loadInitialData() {
     } catch (e) {
       console.warn('[BuscaCNPJ:Empresa] getContext() falhou, usando fallback:', e);
     }
+
+    // Fallback: parse PLACEMENT_OPTIONS from URL (Bitrix24 embeds the context as query param)
+    if (!ctx || !ctx.ID) {
+      try {
+        const po = new URLSearchParams(window.location.search).get('PLACEMENT_OPTIONS');
+        if (po) {
+          const parsed = JSON.parse(decodeURIComponent(po));
+          if (parsed && parsed.ID) ctx = parsed;
+        }
+      } catch (_) {}
+    }
+
     STATE.companyId = ctx && ctx.ID ? String(ctx.ID) : null;
 
     if (!STATE.companyId) {
-      // Dev/fallback sem placement real
+      // Dev/fallback sem placement real — ainda carrega o field_mapping para o save funcionar
       renderDevMode();
+      try {
+        const devOpts = await b24Call('app.option.get', { options: ['field_mapping', 'app_install_suffix'] });
+        let devMapping = devOpts.field_mapping || {};
+        if (typeof devMapping === 'string') {
+          try { devMapping = JSON.parse(devMapping); } catch (_) { devMapping = {}; }
+        }
+        STATE.fieldMapping  = devMapping;
+        STATE.installSuffix = devOpts.app_install_suffix || null;
+        const hasValid = Object.values(STATE.fieldMapping).some(m => m && m.field_id);
+        if (!hasValid) STATE.fieldMapping = buildDefaultMappingFromSuffix(STATE.installSuffix);
+      } catch (e) {
+        console.warn('[BuscaCNPJ:Empresa] Falha ao carregar field_mapping em dev mode:', e);
+        STATE.fieldMapping = buildDefaultMappingFromSuffix(null);
+      }
       return;
     }
 
@@ -1593,6 +1619,16 @@ async function loadInitialData() {
     }
 
     // ── Processar options ──
+    // Se o app.option.get falhou no batch, tentar individualmente
+    if (!batchResult.options || !batchResult.options.data) {
+      try {
+        const optsData = await b24Call('app.option.get', { options: optionsKeys });
+        batchResult.options = { data: optsData };
+      } catch (e) {
+        console.warn('[BuscaCNPJ:Empresa] app.option.get individual também falhou:', e);
+      }
+    }
+
     if (batchResult.options && batchResult.options.data) {
       const opts = batchResult.options.data;
       let fieldMapping = opts.field_mapping || {};
