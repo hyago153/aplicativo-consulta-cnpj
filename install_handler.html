@@ -951,11 +951,25 @@ async function startInstall() {
   setLoadingMsg('Inicializando SDK do Bitrix24');
 
   await new Promise(resolve => BX24.init(resolve));
-  await sleep(400); // aguarda BX24 estabilizar estado de admin no modo estático
 
   setLoadingMsg('Verificando permissões de administrador');
 
-  if (!BX24.isAdmin()) {
+  // BX24.isAdmin() pode não estar pronto imediatamente em apps estáticos.
+  // Tenta até 3x com delay crescente antes de recorrer à API.
+  let isAdmin = false;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (BX24.isAdmin()) { isAdmin = true; break; }
+    await sleep(600 * (attempt + 1)); // 600ms → 1200ms → 1800ms
+  }
+  if (!isAdmin) {
+    // Fallback: app.option.get só funciona para apps com acesso admin
+    try {
+      await callBX24('app.option.get', { options: ['__ping'] });
+      isAdmin = true;
+    } catch (e) { isAdmin = false; }
+  }
+
+  if (!isAdmin) {
     showScreen('screen-error-admin');
     return;
   }
@@ -1100,8 +1114,8 @@ async function runInstallFlow(reuseFields = false) {
     },
   ];
 
-  // Extrai a URL base do app (diretório onde estão os arquivos HTML)
-  const appBaseUrl = BX24.appOption('app_path').replace(/\/[^\/]*$/, '/');
+  // Extrai a URL base do app a partir da URL atual (sem query string nem nome do arquivo)
+  const appBaseUrl = window.location.href.split('?')[0].replace(/[^\/]*$/, '');
 
   let placementErrors = 0;
 
