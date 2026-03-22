@@ -1078,24 +1078,30 @@ async function runInstallFlow(reuseFields = false) {
   const appBaseUrl = window.location.href.split('?')[0].replace(/[^\/]*$/, '');
   appendFieldLog(`[info] base URL: ${appBaseUrl}`, 'ok');
 
-  // Lista placements já registrados para este app (sem parâmetros — placement.get não filtra)
-  let registeredPlacements = [];
+  // Lista placements já registrados para este app com seus HANDLER URLs reais
+  let registeredHandlers = {}; // { PLACEMENT_NAME: [handler_url, ...] }
   try {
     const allRegistered = await callBX24('placement.get', {});
-    registeredPlacements = Array.isArray(allRegistered) ? allRegistered.map(p => p.PLACEMENT) : [];
-  } catch (e) { registeredPlacements = []; }
+    if (Array.isArray(allRegistered)) {
+      for (const p of allRegistered) {
+        if (!registeredHandlers[p.PLACEMENT]) registeredHandlers[p.PLACEMENT] = [];
+        if (p.HANDLER) registeredHandlers[p.PLACEMENT].push(p.HANDLER);
+      }
+    }
+  } catch (e) { registeredHandlers = {}; }
 
   let placementErrors = 0;
 
   for (const pl of PLACEMENTS) {
     const handlerUrl = appBaseUrl + pl.url;
     try {
-      // Se já registrado, faz unbind primeiro para garantir URL atualizada
-      if (registeredPlacements.includes(pl.placement)) {
+      // Unbind todos os handlers registrados para este placement (evita duplicatas)
+      const existingHandlers = registeredHandlers[pl.placement] || [];
+      for (const existingHandler of existingHandlers) {
         try {
           await callBX24('placement.unbind', {
             PLACEMENT: pl.placement,
-            HANDLER: handlerUrl,
+            HANDLER: existingHandler,
           });
         } catch (ubErr) { /* ignora erro de unbind */ }
       }
