@@ -970,6 +970,12 @@ async function startInstall() {
     return;
   }
 
+  // App already installed and no orphan fields: go to configuration page
+  if (wasInstalled && !hasOrphans) {
+    window.location.replace('painel_configuracoes.html');
+    return;
+  }
+
   await runInstallFlow();
 }
 
@@ -1246,7 +1252,16 @@ function sleep(ms) {
 // ── Boot ──────────────────────────────────────────────────────────────
 startInstall().catch(err => {
   console.error('[AppBuscaCNPJ] Erro fatal na instalação:', err);
-  showScreen('screen-error-admin'); // fallback
+  // Only show admin-restricted screen for known permission errors
+  const msg = String(err && (err.message || err));
+  const isPermErr = /access_denied|permission|admin|forbidden/i.test(msg);
+  if (isPermErr) {
+    showScreen('screen-error-admin');
+  } else {
+    showScreen('screen-error-admin'); // fallback — message is generic enough
+    const p = document.querySelector('#screen-error-admin .error-box p');
+    if (p) p.innerHTML = 'Ocorreu um erro ao inicializar o app.<br><br><small style="opacity:.7">' + msg + '</small>';
+  }
 });
 </script>
 </body>
