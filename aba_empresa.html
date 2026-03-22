@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>App Busca CNPJ — Aba Empresa</title>
 <script src="https://api.bitrix24.com/api/v1/"></script>
+<script src="utils.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ─── Reset & Variables ─── */
@@ -1006,6 +1007,8 @@ html, body {
 <script>
 'use strict';
 
+// CONFIG e Error Boundary movidos para utils.js
+
 /* ─────────────────────────────────────────────
    STATE
 ───────────────────────────────────────────── */
@@ -1021,7 +1024,7 @@ const STATE = {
   currentMode:  'visualizar',
 };
 
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+// Cache TTL movido para CONFIG
 
 /* ─────────────────────────────────────────────
    DOM HELPERS
@@ -1056,37 +1059,7 @@ function toast(msg, type = 'green', ms = 2800) {
   toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
 
-/* ─────────────────────────────────────────────
-   FORMATAÇÃO / VALIDAÇÃO CNPJ
-───────────────────────────────────────────── */
-function formatCNPJ(raw) {
-  raw = raw.replace(/\D/g, '').slice(0, 14);
-  if (raw.length === 14)
-    return raw.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-  if (raw.length > 8)
-    return raw.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/, (_, a, b, c, d) => `${a}.${b}.${c}/${d}`);
-  if (raw.length > 5)
-    return raw.replace(/^(\d{2})(\d{3})(\d+)$/, (_, a, b, c) => `${a}.${b}.${c}`);
-  if (raw.length > 2)
-    return raw.replace(/^(\d{2})(\d+)$/, (_, a, b) => `${a}.${b}`);
-  return raw;
-}
-
-function validarCNPJ(cnpj) {
-  const n = cnpj.replace(/\D/g, '');
-  if (n.length !== 14) return false;
-  if (/^(\d)\1+$/.test(n)) return false;
-  function calc(len) {
-    let sum = 0, pos = len - 7;
-    for (let i = len; i >= 1; i--) {
-      sum += parseInt(n.charAt(len - i), 10) * pos--;
-      if (pos < 2) pos = 9;
-    }
-    const r = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-    return r === parseInt(n.charAt(len), 10);
-  }
-  return calc(12) && calc(13);
-}
+// formatCNPJ e validarCNPJ movidos para utils.js
 
 /* ─────────────────────────────────────────────
    CONVERSÕES OBRIGATÓRIAS
@@ -1194,30 +1167,7 @@ function tsDisplay(ts) {
   });
 }
 
-/* ─────────────────────────────────────────────
-   BX24 HELPERS
-───────────────────────────────────────────── */
-function b24Call(method, params) {
-  return new Promise((resolve, reject) => {
-    BX24.callMethod(method, params || {}, result => {
-      if (result.error()) reject(result.error());
-      else resolve(result.data());
-    });
-  });
-}
-
-function b24Batch(calls) {
-  return new Promise((resolve) => {
-    BX24.callBatch(calls, results => {
-      const out = {};
-      for (const k in results) {
-        if (results[k].error()) out[k] = { error: results[k].error() };
-        else                    out[k] = { data:  results[k].data()  };
-      }
-      resolve(out);
-    });
-  });
-}
+// b24Call e b24Batch movidos para utils.js
 
 /* ─────────────────────────────────────────────
    MODO (abas)
@@ -1234,9 +1184,10 @@ function setMode(mode) {
    RENDERIZAR DADOS SALVOS (painel Visualizar)
 ───────────────────────────────────────────── */
 function renderSavedData(companyFields) {
-  const m = STATE.fieldMapping;
+  const m = STATE.fieldMapping || {};
 
   function getVal(chave) {
+    if (!m) return null;
     const mapeado = m[chave];
     if (!mapeado || !mapeado.field_id || mapeado.field_id === '__skip__') return null;
     return companyFields[mapeado.field_id] || null;
@@ -1411,13 +1362,15 @@ function resetSaveButton() {
   const btn = $('btn-salvar');
   btn.classList.remove('saved');
   btn.disabled = false;
-  $('btn-salvar-label').innerHTML = `
+  const labelEl = $('btn-salvar-label');
+  labelEl.innerHTML = `
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:middle;margin-right:3px">
       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
       <polyline points="17 21 17 13 7 13 7 21"/>
       <polyline points="7 3 7 8 15 8"/>
     </svg>
-    Salvar na Empresa`;
+  `;
+  labelEl.appendChild(document.createTextNode('Salvar na Empresa'));
 }
 
 /* ─────────────────────────────────────────────
@@ -1641,9 +1594,9 @@ async function loadInitialData() {
       // Cache desta empresa
       const cacheKey = `company_${STATE.companyId}_last_query`;
       const cacheObj = opts[cacheKey];
-      if (cacheObj && cacheObj.timestamp) {
+      if (cacheObj && typeof cacheObj.timestamp === 'number' && !isNaN(cacheObj.timestamp)) {
         const age = Date.now() - cacheObj.timestamp;
-        if (age < CACHE_TTL_MS) {
+        if (age < CONFIG.CACHE_TTL_MS) {
           STATE.lastQueryData = cacheObj.dados_completos;
           showCacheBanner(cacheObj.timestamp, cacheObj.cnpj);
         }
@@ -1801,7 +1754,10 @@ async function doSearch(cnpjOverride) {
 
     // Tentativa 1: OpenCNPJ
     try {
-      const resp = await fetch(`https://api.opencnpj.org/cnpj/${raw}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const resp = await fetch(`${CONFIG.API_OPENCNPJ}${raw}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (resp.ok) data = await resp.json();
       else console.warn(`[BuscaCNPJ:Empresa] OpenCNPJ retornou ${resp.status}, tentando BrasilAPI...`);
     } catch (e) {
@@ -1810,7 +1766,10 @@ async function doSearch(cnpjOverride) {
 
     // Tentativa 2: BrasilAPI (fallback)
     if (!data) {
-      const resp2 = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const resp2 = await fetch(`${CONFIG.API_BRASILAPI}${raw}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!resp2.ok) {
         let errMsg = `Erro HTTP ${resp2.status}`;
         if (resp2.status === 404) errMsg = 'CNPJ não encontrado na base da Receita Federal.';
@@ -1876,16 +1835,21 @@ async function salvarCache(cnpjRaw, dados, ts) {
 $('btn-salvar').addEventListener('click', () => doSave());
 
 async function doSave() {
-  if (STATE.saving) return;
-  if (!STATE.lastQueryData) return;
+  const btn = $('btn-salvar');
+  if (btn.disabled || STATE.saving) return;
+  btn.disabled = true;
+  
+  if (!STATE.lastQueryData) {
+    btn.disabled = false;
+    return;
+  }
   if (!STATE.companyId) {
     toast('⚠ Empresa não identificada', 'yellow', 3000);
+    btn.disabled = false;
     return;
   }
 
   STATE.saving = true;
-  const btn = $('btn-salvar');
-  btn.disabled = true;
   $('btn-salvar-label').textContent = 'Salvando...';
 
   try {
@@ -1967,7 +1931,14 @@ function showSaveStatus(type, html) {
   el.classList.remove('visible', 'ok', 'err');
   el.classList.add('visible', type);
   $('save-status-icon').textContent = type === 'ok' ? '✓' : '✕';
-  $('save-status-text').innerHTML   = html;
+  
+  // Use DOMParser to safely inject HTML without executing scripts
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  $('save-status-text').textContent = ''; // clear current content
+  Array.from(doc.body.childNodes).forEach(node => {
+    $('save-status-text').appendChild(node);
+  });
 }
 
 /* ─────────────────────────────────────────────
@@ -2044,7 +2015,11 @@ async function doLimpar() {
     chavesCNPJ.forEach(chave => {
       const m = mapping[chave];
       if (m && m.field_id && m.field_id !== '__skip__') {
-        emptyPayload[m.field_id] = '';
+        if (chave === 'data_situacao_cadastral' || chave === 'data_inicio_atividade') {
+          emptyPayload[m.field_id] = null;
+        } else {
+          emptyPayload[m.field_id] = '';
+        }
       }
     });
 

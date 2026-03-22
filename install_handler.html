@@ -6,6 +6,7 @@
 <title>App Busca CNPJ — Instalação</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://api.bitrix24.com/api/v1/"></script>
+<script src="utils.js"></script>
 <style>
   :root {
     --libe-green: #0bbf7e;
@@ -834,6 +835,8 @@ const JSON_MAPPING = {
 // Fields that start as "Não Salvar" in mapping
 const NOT_SAVED_BY_DEFAULT = ['CNPJ_SMP', 'CNPJ_CMP', 'CNPJ_EML'];
 
+// Error Boundary movido para utils.js
+
 // Global state
 let g = {
   suffix: null,
@@ -908,17 +911,7 @@ function updateFieldSubProgress(done, total) {
   document.getElementById('field-progress-bar').style.width = pct + '%';
 }
 
-function callBX24(method, params) {
-  return new Promise((resolve, reject) => {
-    BX24.callMethod(method, params, (result) => {
-      if (result.error()) {
-        reject(result.error());
-      } else {
-        resolve(result.data());
-      }
-    });
-  });
-}
+// callBX24 movido para utils.js
 
 // Run batches of at most 5 concurrent calls
 async function runInBatches(tasks, batchSize) {
@@ -1011,7 +1004,7 @@ async function runInstallFlow(reuseFields = false) {
   await sleep(150);
 
   if (!g.suffix) {
-    g.suffix = String(Date.now()).slice(-2).padStart(2, '0');
+    g.suffix = String(Date.now()).slice(-4) + Math.floor(Math.random() * 10);
   }
 
   try {
@@ -1040,13 +1033,17 @@ async function runInstallFlow(reuseFields = false) {
   const fieldMapping = buildDefaultMapping();
 
   try {
-    await callBX24('app.option.set', {
+    const res = await callBX24('app.option.set', {
       options: {
         field_mapping: JSON.stringify(fieldMapping),
         hint_pending: JSON.stringify(g.hintPending),
         failed_fields: JSON.stringify(g.failedFields),
       }
     });
+    // bx24 app.option.set doesn't always throw an error on failure, sometimes it returns error in response
+    if (res && res.error) {
+      throw new Error(res.error_description || res.error);
+    }
     setStepState('mapping', 'done', 'Mapeamento padrão salvo');
     setProgress(75);
   } catch (e) {
@@ -1074,8 +1071,8 @@ async function runInstallFlow(reuseFields = false) {
     },
   ];
 
-  // URL base: usa window.location sem query string nem nome do arquivo
-  const appBaseUrl = window.location.href.split('?')[0].replace(/[^\/]*$/, '');
+  // URL base: usa a API URL nativa
+  const appBaseUrl = new URL('./', window.location.href).href;
   appendFieldLog(`[info] base URL: ${appBaseUrl}`, 'ok');
 
   // Lista placements já registrados para este app com seus HANDLER URLs reais

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>App Busca CNPJ — Painel de Consulta</title>
 <script src="https://api.bitrix24.com/api/v1/"></script>
+<script src="utils.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ─── Reset & Variables ─── */
@@ -798,6 +799,8 @@ html, body {
 <script>
 'use strict';
 
+// CONFIG e Error Boundary movidos para utils.js
+
 /* ─────────────────────────────────────────────
    STATE
 ───────────────────────────────────────────── */
@@ -812,7 +815,7 @@ const STATE = {
   saving: false,
 };
 
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+// Cache TTL movido para CONFIG
 
 /* ─────────────────────────────────────────────
    HELPERS — DOM
@@ -846,40 +849,7 @@ function toast(msg, type = 'green', ms = 2800) {
   toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
 
-/* ─────────────────────────────────────────────
-   HELPERS — Formatação CNPJ
-───────────────────────────────────────────── */
-function formatCNPJ(raw) {
-  raw = raw.replace(/\D/g, '').slice(0, 14);
-  if (raw.length === 14)
-    return raw.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-  if (raw.length > 8)
-    return raw.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/, (_, a,b,c,d) => `${a}.${b}.${c}/${d}`);
-  if (raw.length > 5)
-    return raw.replace(/^(\d{2})(\d{3})(\d+)$/, (_, a,b,c) => `${a}.${b}.${c}`);
-  if (raw.length > 2)
-    return raw.replace(/^(\d{2})(\d+)$/, (_, a,b) => `${a}.${b}`);
-  return raw;
-}
-
-/* ─────────────────────────────────────────────
-   VALIDAÇÃO DE CNPJ (dígito verificador)
-───────────────────────────────────────────── */
-function validarCNPJ(cnpj) {
-  const n = cnpj.replace(/\D/g, '');
-  if (n.length !== 14) return false;
-  if (/^(\d)\1+$/.test(n)) return false; // todos iguais
-  function calc(len) {
-    let sum = 0, pos = len - 7;
-    for (let i = len; i >= 1; i--) {
-      sum += parseInt(n.charAt(len - i), 10) * pos--;
-      if (pos < 2) pos = 9;
-    }
-    const r = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-    return r === parseInt(n.charAt(len), 10);
-  }
-  return calc(12) && calc(13);
-}
+// formatCNPJ e validarCNPJ movidos para utils.js
 
 /* ─────────────────────────────────────────────
    HELPERS — Conversões obrigatórias
@@ -1068,13 +1038,15 @@ function resetSaveButton() {
   const btn = $('btn-salvar');
   btn.classList.remove('saved', 'saving');
   btn.disabled = false; // Sempre habilitado — cria empresa se necessário
-  $('btn-salvar-label').innerHTML = `
+  const labelEl = $('btn-salvar-label');
+  labelEl.innerHTML = `
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:middle;margin-right:3px">
       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
       <polyline points="17 21 17 13 7 13 7 21"/>
       <polyline points="7 3 7 8 15 8"/>
     </svg>
-    Salvar em Empresa`;
+  `;
+  labelEl.appendChild(document.createTextNode('Salvar em Empresa'));
 }
 
 /* ─────────────────────────────────────────────
@@ -1190,37 +1162,6 @@ function buildPayload(data) {
 }
 
 /* ─────────────────────────────────────────────
-   BX24 HELPERS
-───────────────────────────────────────────── */
-function b24Call(method, params) {
-  return new Promise((resolve, reject) => {
-    BX24.callMethod(method, params || {}, result => {
-      if (result.error()) reject(result.error());
-      else resolve(result.data());
-    });
-  });
-}
-
-function b24Batch(calls) {
-  return new Promise((resolve, reject) => {
-    BX24.callBatch(calls, results => {
-      // results é { key: result }
-      const out = {};
-      let hasError = false;
-      for (const k in results) {
-        if (results[k].error()) {
-          hasError = true;
-          out[k] = { error: results[k].error() };
-        } else {
-          out[k] = { data: results[k].data() };
-        }
-      }
-      resolve(out); // sempre resolve — erros individuais no objeto
-    });
-  });
-}
-
-/* ─────────────────────────────────────────────
    INIT — BX24.init + carregamento inicial
 ───────────────────────────────────────────── */
 BX24.init(() => {
@@ -1297,9 +1238,9 @@ async function loadInitialData() {
       // Cache desta deal
       const cacheKey = `deal_${STATE.dealId}_last_query`;
       const cacheObj = opts[cacheKey];
-      if (cacheObj && cacheObj.timestamp) {
+      if (cacheObj && typeof cacheObj.timestamp === 'number' && !isNaN(cacheObj.timestamp)) {
         const age = Date.now() - cacheObj.timestamp;
-        if (age < CACHE_TTL_MS) {
+        if (age < CONFIG.CACHE_TTL_MS) {
           // Cache válido
           STATE.lastQueryData = cacheObj.dados_completos;
           showCacheBanner(cacheObj.timestamp, cacheObj.cnpj);
@@ -1434,7 +1375,10 @@ async function doSearch(cnpjOverride) {
 
     // Tentativa 1: OpenCNPJ
     try {
-      const resp = await fetch(`https://api.opencnpj.org/cnpj/${raw}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const resp = await fetch(`${CONFIG.API_OPENCNPJ}${raw}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (resp.ok) data = await resp.json();
       else console.warn(`[BuscaCNPJ] OpenCNPJ retornou ${resp.status}, tentando BrasilAPI...`);
     } catch (e) {
@@ -1443,7 +1387,10 @@ async function doSearch(cnpjOverride) {
 
     // Tentativa 2: BrasilAPI (fallback)
     if (!data) {
-      const resp2 = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const resp2 = await fetch(`${CONFIG.API_BRASILAPI}${raw}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!resp2.ok) {
         let errMsg = `Erro HTTP ${resp2.status}`;
         if (resp2.status === 404) errMsg = 'CNPJ não encontrado na base da Receita Federal.';
@@ -1532,13 +1479,17 @@ async function salvarStatusBusca(status) {
 $('btn-salvar').addEventListener('click', () => doSave());
 
 async function doSave() {
-  if (STATE.saving) return;
-  if (!STATE.lastQueryData) return;
+  const btn = $('btn-salvar');
+  if (btn.disabled || STATE.saving) return;
+  btn.disabled = true;
+  
+  if (!STATE.lastQueryData) {
+    btn.disabled = false;
+    return;
+  }
 
   STATE.saving = true;
-  const btn = $('btn-salvar');
   btn.classList.add('saving');
-  btn.disabled = true;
 
   try {
     // Se não há empresa vinculada ao negócio, criar e vincular
@@ -1634,7 +1585,14 @@ function showSaveStatus(type, html) {
   el.classList.remove('visible', 'ok', 'err');
   el.classList.add('visible', type);
   $('save-status-icon').textContent = type === 'ok' ? '✓' : '✕';
-  $('save-status-text').innerHTML   = html;
+  
+  // Use DOMParser to safely inject HTML without executing scripts
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  $('save-status-text').textContent = ''; // clear current content
+  Array.from(doc.body.childNodes).forEach(node => {
+    $('save-status-text').appendChild(node);
+  });
 }
 
 /* ─────────────────────────────────────────────

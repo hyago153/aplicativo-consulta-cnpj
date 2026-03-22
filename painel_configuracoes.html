@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://api.bitrix24.com/api/v1/"></script>
+<script src="utils.js"></script>
 <style>
   :root {
     --libe-green:  #0bbf7e;
@@ -738,6 +739,8 @@
 // CONSTANTES E DADOS
 // ──────────────────────────────────────────────────────────
 
+// Error Boundary movido para utils.js
+
 const CAMPOS_RECEITA = [
   // Identificação
   { group: 'Identificação', key: 'razao_social',              label: 'Razão Social',           json: 'razao_social',              tipo: 'string', fieldCode: null,       nativo: true },
@@ -806,14 +809,20 @@ document.addEventListener('DOMContentLoaded', () => {
 async function inicializar() {
   showLoading(true, 'Carregando configurações…');
 
-  // Chamadas paralelas de inicialização
-  const [optRes, fieldsRes, ufRes, placDealRes, placCompRes] = await Promise.all([
+  // Chamadas paralelas de inicialização usando Promise.allSettled para evitar falha total
+  const results = await Promise.allSettled([
     callBX24('app.option.get', { options: ['app_install_suffix', 'field_mapping', 'hint_pending', 'failed_fields'] }),
     callBX24('crm.company.fields', {}),
     callBX24('crm.company.userfield.list', { filter: { ENTITY_ID: 'CRM_COMPANY' } }),
     callBX24('placement.get', { PLACEMENT: 'CRM_DEAL_DETAIL_TAB' }),
     callBX24('placement.get', { PLACEMENT: 'CRM_COMPANY_DETAIL_TAB' }),
   ]);
+
+  const optRes = results[0].status === 'fulfilled' ? results[0].value : { result: {} };
+  const fieldsRes = results[1].status === 'fulfilled' ? results[1].value : { result: {} };
+  const ufRes = results[2].status === 'fulfilled' ? results[2].value : { result: [] };
+  const placDealRes = results[3].status === 'fulfilled' ? results[3].value : { result: [] };
+  const placCompRes = results[4].status === 'fulfilled' ? results[4].value : { result: [] };
 
   // Sufixo
   state.suffix = optRes.result?.app_install_suffix || null;
@@ -975,13 +984,16 @@ function criarCard(campo) {
     const tooltip = document.createElement('div');
     tooltip.className = 'tooltip-box';
     tooltip.id = `tooltip-${campo.key}`;
+    const safeLabel = campo.label.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     tooltip.innerHTML = `
-      <div class="tooltip-title">Criar campo <em>"${campo.label} - App Busca CNPJ"</em> em Empresa no Bitrix24?</div>
+      <div class="tooltip-title">Criar campo <em>"${safeLabel} - App Busca CNPJ"</em> em Empresa no Bitrix24?</div>
       <div class="tooltip-actions">
-        <button class="btn btn-primary btn-sm" onclick="criarCampo('${campo.key}', this)">Criar</button>
-        <button class="btn btn-secondary btn-sm" onclick="fecharTooltip()">Cancelar</button>
+        <button class="btn btn-primary btn-sm btn-criar">Criar</button>
+        <button class="btn btn-secondary btn-sm btn-cancelar">Cancelar</button>
       </div>
     `;
+    tooltip.querySelector('.btn-criar').addEventListener('click', function() { criarCampo(campo.key, this); });
+    tooltip.querySelector('.btn-cancelar').addEventListener('click', fecharTooltip);
 
     tooltipWrap.appendChild(btnPlus);
     tooltipWrap.appendChild(tooltip);
@@ -1166,6 +1178,14 @@ async function criarCampo(key, btnEl) {
     console.error('[criarCampo]', err);
     btnEl.disabled = false;
     btnEl.textContent = 'Criar';
+    
+    // Revert state if field was added before failure (in case error happens later)
+    const ufName = `UF_CRM_${fieldName}`;
+    const idx = state.userFields.findIndex(f => f.id === ufName);
+    if (idx !== -1) {
+      state.userFields.splice(idx, 1);
+      atualizarTodosDropdowns();
+    }
 
     // Verificar se campo já existe
     if (err.message && (err.message.includes('ALREADY_EXISTS') || err.message.includes('already exists'))) {
@@ -1397,6 +1417,7 @@ function restaurarMapeamento() {
 // ──────────────────────────────────────────────────────────
 // UTILITÁRIOS BX24
 // ──────────────────────────────────────────────────────────
+// callBX24 movido para utils.js (sobrescrevendo para compatibilidade com painel_configuracoes)
 function callBX24(method, params) {
   return new Promise((resolve, reject) => {
     BX24.callMethod(method, params, (res) => {
