@@ -1271,8 +1271,9 @@ async function loadInitialData() {
       STATE.fieldMapping   = fieldMapping;
       STATE.installSuffix  = opts.app_install_suffix || null;
 
-      // Se não há mapeamento configurado, usar mapeamento padrão com base no sufixo
-      if (Object.keys(STATE.fieldMapping).length === 0) {
+      // Se nenhum campo tem field_id definido, usar mapeamento padrão com base no sufixo
+      const hasValidMapping = Object.values(STATE.fieldMapping).some(m => m && m.field_id);
+      if (!hasValidMapping) {
         STATE.fieldMapping = buildDefaultMappingFromSuffix(STATE.installSuffix);
       }
 
