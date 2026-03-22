@@ -1067,7 +1067,7 @@ function renderResult(data, ts) {
 function resetSaveButton() {
   const btn = $('btn-salvar');
   btn.classList.remove('saved', 'saving');
-  btn.disabled = !STATE.companyId;
+  btn.disabled = false; // Sempre habilitado — cria empresa se necessário
   $('btn-salvar-label').innerHTML = `
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:middle;margin-right:3px">
       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
@@ -1075,6 +1075,50 @@ function resetSaveButton() {
       <polyline points="7 3 7 8 15 8"/>
     </svg>
     Salvar em Empresa`;
+}
+
+/* ─────────────────────────────────────────────
+   MAPEAMENTO PADRÃO (fallback quando não configurado)
+───────────────────────────────────────────── */
+function buildDefaultMappingFromSuffix(suffix) {
+  const s = suffix || '00';
+  const CAMPOS = [
+    { key: 'razao_social',            fieldCode: null,       nativo: true,  noSaveDefault: false },
+    { key: 'cnpj',                    fieldCode: 'CNPJ_NUM', nativo: false, noSaveDefault: false },
+    { key: 'nome_fantasia',           fieldCode: 'CNPJ_FAN', nativo: false, noSaveDefault: false },
+    { key: 'situacao_cadastral',      fieldCode: 'CNPJ_SIT', nativo: false, noSaveDefault: false },
+    { key: 'data_situacao_cadastral', fieldCode: 'CNPJ_DST', nativo: false, noSaveDefault: false },
+    { key: 'capital_social',          fieldCode: 'CNPJ_CAP', nativo: false, noSaveDefault: false },
+    { key: 'porte_empresa',           fieldCode: 'CNPJ_POR', nativo: false, noSaveDefault: false },
+    { key: 'natureza_juridica',       fieldCode: 'CNPJ_NAT', nativo: false, noSaveDefault: false },
+    { key: 'data_inicio_atividade',   fieldCode: 'CNPJ_DAB', nativo: false, noSaveDefault: false },
+    { key: 'matriz_filial',           fieldCode: 'CNPJ_MTZ', nativo: false, noSaveDefault: false },
+    { key: 'opcao_simples',           fieldCode: 'CNPJ_SMP', nativo: false, noSaveDefault: true  },
+    { key: 'opcao_mei',               fieldCode: 'CNPJ_MEI', nativo: false, noSaveDefault: false },
+    { key: 'cnae_principal',          fieldCode: 'CNPJ_NAE', nativo: false, noSaveDefault: false },
+    { key: 'logradouro',              fieldCode: 'CNPJ_LOG', nativo: false, noSaveDefault: false },
+    { key: 'numero',                  fieldCode: 'CNPJ_NRO', nativo: false, noSaveDefault: false },
+    { key: 'complemento',             fieldCode: 'CNPJ_CMP', nativo: false, noSaveDefault: true  },
+    { key: 'bairro',                  fieldCode: 'CNPJ_BAI', nativo: false, noSaveDefault: false },
+    { key: 'cep',                     fieldCode: 'CNPJ_CEP', nativo: false, noSaveDefault: false },
+    { key: 'municipio',               fieldCode: 'CNPJ_CID', nativo: false, noSaveDefault: false },
+    { key: 'uf',                      fieldCode: 'CNPJ_UF',  nativo: false, noSaveDefault: false },
+    { key: 'telefone',                fieldCode: 'CNPJ_TEL', nativo: false, noSaveDefault: false },
+    { key: 'email',                   fieldCode: 'CNPJ_EML', nativo: false, noSaveDefault: true  },
+    { key: 'QSA',                     fieldCode: 'CNPJ_QSA', nativo: false, noSaveDefault: false },
+    { key: 'status_busca',            fieldCode: 'CNPJ_STS', nativo: false, noSaveDefault: false },
+  ];
+  const mapping = {};
+  for (const campo of CAMPOS) {
+    if (campo.noSaveDefault) {
+      mapping[campo.key] = { entity: 'company', field_id: null };
+    } else if (campo.nativo) {
+      mapping[campo.key] = { entity: 'company', field_id: 'TITLE' };
+    } else {
+      mapping[campo.key] = { entity: 'company', field_id: `UF_CRM_${campo.fieldCode}_${s}` };
+    }
+  }
+  return mapping;
 }
 
 /* ─────────────────────────────────────────────
@@ -1222,6 +1266,11 @@ async function loadInitialData() {
       const opts = batchResult.options.data;
       STATE.fieldMapping   = opts.field_mapping  || {};
       STATE.installSuffix  = opts.app_install_suffix || null;
+
+      // Se não há mapeamento configurado, usar mapeamento padrão com base no sufixo
+      if (Object.keys(STATE.fieldMapping).length === 0) {
+        STATE.fieldMapping = buildDefaultMappingFromSuffix(STATE.installSuffix);
+      }
 
       // Cache desta deal
       const cacheKey = `deal_${STATE.dealId}_last_query`;
@@ -1457,10 +1506,6 @@ $('btn-salvar').addEventListener('click', () => doSave());
 
 async function doSave() {
   if (STATE.saving) return;
-  if (!STATE.companyId) {
-    toast('⚠ Vincule uma empresa a este negócio primeiro', 'yellow', 3500);
-    return;
-  }
   if (!STATE.lastQueryData) return;
 
   STATE.saving = true;
@@ -1469,6 +1514,11 @@ async function doSave() {
   btn.disabled = true;
 
   try {
+    // Se não há empresa vinculada ao negócio, criar e vincular
+    if (!STATE.companyId) {
+      await criarEVincularEmpresa();
+    }
+
     const payload = buildPayload(STATE.lastQueryData);
 
     if (Object.keys(payload).length === 0) {
@@ -1479,7 +1529,6 @@ async function doSave() {
       return;
     }
 
-    // Máximo 5 chamadas simultâneas — aqui é uma única chamada de update
     await b24Call('crm.company.update', {
       id: STATE.companyId,
       fields: payload,
@@ -1503,6 +1552,36 @@ async function doSave() {
   } finally {
     STATE.saving = false;
   }
+}
+
+async function criarEVincularEmpresa() {
+  const data = STATE.lastQueryData;
+  const titulo = data.razao_social || `CNPJ ${data.cnpj || ''}`;
+
+  const companyFields = { TITLE: titulo };
+  const tel = extrairTelefone(data.telefones) || data.telefone;
+  if (tel) companyFields.PHONE = [{ VALUE: tel, VALUE_TYPE: 'WORK' }];
+  if (data.email) companyFields.EMAIL = [{ VALUE: data.email, VALUE_TYPE: 'WORK' }];
+
+  // Criar empresa no Bitrix24
+  const newCompanyId = await b24Call('crm.company.add', { fields: companyFields });
+
+  // Vincular empresa ao negócio
+  await b24Call('crm.deal.update', {
+    id: STATE.dealId,
+    fields: { COMPANY_ID: newCompanyId },
+  });
+
+  STATE.companyId   = String(newCompanyId);
+  STATE.companyName = titulo;
+
+  // Atualizar UI da pill de empresa
+  const pill = $('company-pill');
+  pill.className = 'deal-company-pill';
+  $('company-name').textContent = titulo;
+  $('no-company-warn').classList.remove('visible');
+
+  toast(`Empresa "${titulo}" criada e vinculada ao negócio`, 'green', 3500);
 }
 
 function showSaveStatus(type, html) {
