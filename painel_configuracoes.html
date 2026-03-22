@@ -837,7 +837,10 @@ async function inicializar() {
   state.failedFields = optRes.result?.failed_fields || [];
 
   // Mapeamento salvo
-  const savedMapping = optRes.result?.field_mapping || {};
+  let savedMapping = optRes.result?.field_mapping || {};
+  if (typeof savedMapping === 'string') {
+    try { savedMapping = JSON.parse(savedMapping); } catch (_) { savedMapping = {}; }
+  }
   if (Object.keys(savedMapping).length > 0) {
     state.fieldMapping = savedMapping;
   } else {
@@ -1191,6 +1194,7 @@ async function salvarConfiguracoes() {
     });
     state.hasChanges = false;
     document.getElementById('unsaved-indicator').classList.remove('visible');
+    atualizarContador();
     showToast('Configurações salvas com sucesso!', 'success');
   } catch (err) {
     console.error('[salvarConfiguracoes]', err);
