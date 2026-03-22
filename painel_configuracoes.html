@@ -1093,7 +1093,15 @@ async function criarCampo(key, btnEl) {
 
   try {
     // Chamada 1: criar campo
-    const labelObj = { ru: labelCampo, en: labelCampo, pt: labelCampo };
+    const labelObj = {
+      br: labelCampo, en: labelCampo, de: labelCampo,
+      ru: labelCampo, th: labelCampo, kk: labelCampo,
+      ua: labelCampo, es: labelCampo, tc: labelCampo,
+      sc: labelCampo, ar: labelCampo, fr: labelCampo,
+      vn: labelCampo, pl: labelCampo, tr: labelCampo,
+      ja: labelCampo, it: labelCampo, ms: labelCampo,
+      id: labelCampo,
+    };
     const addRes = await callBX24('crm.company.userfield.add', {
       fields: {
         ENTITY_ID: 'CRM_COMPANY',
