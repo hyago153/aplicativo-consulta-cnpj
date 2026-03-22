@@ -1152,6 +1152,13 @@ async function criarCampo(key, btnEl) {
     if (card) card.classList.add('is-mapped');
     onMappingChange(key, ufName, card, select);
 
+    // Auto-salvar mapeamento após criação de campo
+    try {
+      await callBX24('app.option.set', {
+        options: { field_mapping: JSON.stringify(state.fieldMapping) }
+      });
+    } catch (_) { /* silencioso — usuário ainda pode salvar manualmente */ }
+
     fecharTooltip();
     showToast(`Campo "${labelCampo}" criado com sucesso!`, 'success');
 
