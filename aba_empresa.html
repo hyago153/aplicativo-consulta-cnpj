@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Busca CNPJ — Aba Empresa</title>
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── Reset & Variables ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --libe-green:        #0bbf7e;
+  --libe-dark:         #0c021c;
+  --libe-blue:         #59abed;
+  --libe-yellow:       #ffb317;
+  --libe-card:         #140a28;
+  --libe-card2:        #1a0f33;
+  --libe-border:       rgba(11,191,126,0.18);
+  --libe-border-strong:rgba(11,191,126,0.4);
+  --libe-text:         #f0eaf8;
+  --libe-muted:        rgba(240,234,248,0.55);
+  --libe-red:          #ff6b6b;
+  --libe-red-bg:       rgba(255,107,107,0.08);
+  --libe-red-border:   rgba(255,107,107,0.25);
+}
+
+html, body {
+  background: var(--libe-dark);
+  color: var(--libe-text);
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Layout ─── */
+.wrap {
+  padding: 16px 18px 36px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ─── Header ─── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 13px; gap: 10px;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: rgba(11,191,126,0.12);
+  border: 1px solid var(--libe-border);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.header-icon svg { color: var(--libe-green); }
+.header-title { font-size: 15px; font-weight: 700; color: var(--libe-text); line-height: 1.2; }
+.header-sub   { font-size: 10px; color: var(--libe-muted); font-weight: 400; margin-top: 1px; }
+.header-actions { display: flex; gap: 7px; align-items: center; }
+
+/* ─── Company Context Bar ─── */
+.company-bar {
+  background: var(--libe-card);
+  border: 1px solid rgba(89,171,237,0.2);
+  border-radius: 10px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.company-bar-left { display: flex; align-items: center; gap: 9px; }
+.company-bar-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(89,171,237,0.12);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.company-bar-label { font-size: 9px; font-weight: 700; color: var(--libe-muted); text-transform: uppercase; letter-spacing: .09em; }
+.company-bar-name  { font-size: 12px; font-weight: 600; color: var(--libe-text); margin-top: 1px; }
+.company-bar-id    { font-size: 9px; color: var(--libe-muted); margin-top: 1px; }
+
+/* ─── Cache Banner ─── */
+.cache-banner {
+  display: none;
+  background: rgba(255,179,23,0.07);
+  border: 1px solid rgba(255,179,23,0.22);
+  border-radius: 10px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  align-items: center; justify-content: space-between; gap: 10px;
+}
+.cache-banner.visible { display: flex; }
+.cache-banner-left { display: flex; align-items: center; gap: 8px; }
+.cache-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--libe-yellow); flex-shrink: 0; }
+.cache-text { font-size: 11px; color: var(--libe-text); line-height: 1.4; }
+.cache-text strong { color: var(--libe-yellow); }
+.cache-banner-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-cache {
+  background: transparent;
+  border: 1px solid rgba(255,179,23,0.35);
+  border-radius: 7px; color: var(--libe-yellow);
+  font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700;
+  padding: 5px 11px; cursor: pointer; transition: background .2s; white-space: nowrap;
+}
+.btn-cache:hover { background: rgba(255,179,23,0.1); }
+
+/* ─── Mode Tabs ─── */
+.mode-tabs {
+  display: flex; gap: 6px; margin-bottom: 13px;
+  background: var(--libe-card);
+  border: 1px solid var(--libe-border);
+  border-radius: 11px;
+  padding: 5px;
+}
+.mode-tab {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px; border: 1px solid transparent;
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600;
+  cursor: pointer; color: var(--libe-muted);
+  background: transparent; transition: all .18s;
+}
+.mode-tab:hover { color: var(--libe-text); background: rgba(240,234,248,0.04); }
+.mode-tab.active {
+  color: var(--libe-green);
+  background: rgba(11,191,126,0.1);
+  border-color: var(--libe-border);
+}
+.mode-tab svg { flex-shrink: 0; }
+
+/* ─── Input Section ─── */
+.input-section {
+  background: var(--libe-card);
+  border: 1px solid var(--libe-border);
+  border-radius: 14px;
+  padding: 15px 16px;
+  margin-bottom: 14px;
+}
+.input-label {
+  font-size: 9px; font-weight: 700; color: var(--libe-muted);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.input-label::before {
+  content: ''; display: block; width: 3px; height: 12px;
+  background: var(--libe-green); border-radius: 2px;
+}
+.input-row { display: flex; gap: 8px; align-items: stretch; }
+.cnpj-input-wrap { flex: 1; position: relative; }
+.cnpj-input-icon {
+  position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%); pointer-events: none; opacity: 0.45;
+}
+.cnpj-input {
+  width: 100%; background: #0a0617;
+  border: 1.5px solid var(--libe-border); border-radius: 9px;
+  color: var(--libe-text); font-family: 'Poppins', sans-serif;
+  font-size: 15px; font-weight: 600;
+  padding: 11px 12px 11px 38px;
+  outline: none; letter-spacing: .04em;
+  transition: border-color .2s, box-shadow .2s;
+}
+.cnpj-input::placeholder { color: var(--libe-muted); font-size: 13px; font-weight: 400; letter-spacing: 0; }
+.cnpj-input:focus { border-color: var(--libe-green); box-shadow: 0 0 0 3px rgba(11,191,126,0.1); }
+.cnpj-input.valid   { border-color: rgba(11,191,126,0.55); }
+.cnpj-input.invalid { border-color: rgba(255,107,107,0.5); }
+.btn-consultar {
+  background: var(--libe-green); color: var(--libe-dark);
+  border: none; border-radius: 9px;
+  font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 700;
+  padding: 0 20px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: filter .2s, transform .15s;
+  white-space: nowrap; min-height: 44px;
+}
+.btn-consultar:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-consultar:active { transform: translateY(0); filter: brightness(.97); }
+.btn-consultar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+.input-hint {
+  font-size: 10px; color: var(--libe-muted); margin-top: 7px;
+  display: flex; align-items: center; gap: 5px;
+}
+.input-hint::before {
+  content: ''; width: 3px; height: 3px; border-radius: 50%;
+  background: var(--libe-muted); flex-shrink: 0;
+}
+.validation-msg {
+  display: none; font-size: 10px; font-weight: 600;
+  color: var(--libe-red); margin-top: 5px; padding-left: 4px;
+}
+.validation-msg.visible { display: block; }
+
+/* ─── Error State ─── */
+.error-state {
+  display: none;
+  background: var(--libe-red-bg); border: 1px solid var(--libe-red-border);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;
+}
+.error-state.visible { display: flex; gap: 10px; align-items: flex-start; }
+.error-icon  { font-size: 15px; flex-shrink: 0; }
+.error-title { font-size: 12px; font-weight: 700; color: var(--libe-red); margin-bottom: 2px; }
+.error-desc  { font-size: 11px; color: var(--libe-muted); line-height: 1.5; }
+
+/* ─── Loading ─── */
+.loading-state {
+  display: none; text-align: center; padding: 40px 20px;
+}
+.loading-state.visible { display: block; }
+.spinner {
+  width: 30px; height: 30px;
+  border: 2.5px solid var(--libe-border); border-top-color: var(--libe-green);
+  border-radius: 50%; animation: spin .75s linear infinite; margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-label { font-size: 12px; color: var(--libe-muted); }
+.loading-label strong { color: var(--libe-green); }
+
+/* ─── Empty State ─── */
+.empty-state { text-align: center; padding: 38px 20px; }
+.empty-icon {
+  width: 52px; height: 52px;
+  border: 2px dashed var(--libe-border); border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px; font-size: 20px;
+}
+.empty-title { font-size: 13px; font-weight: 600; color: var(--libe-text); margin-bottom: 5px; }
+.empty-desc  { font-size: 11px; color: var(--libe-muted); line-height: 1.65; }
+.empty-desc strong { color: var(--libe-green); }
+
+/* ─── Result Area ─── */
+.result-area { display: none; }
+.result-area.visible { display: block; }
+
+/* Result Toolbar */
+.result-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; gap: 10px; flex-wrap: wrap;
+}
+.result-toolbar-left  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.result-toolbar-right { display: flex; gap: 7px; align-items: center; flex-shrink: 0; }
+
+.result-source-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(89,171,237,0.1); border: 1px solid rgba(89,171,237,0.28);
+  border-radius: 20px; padding: 4px 10px;
+  font-size: 10px; font-weight: 700; color: var(--libe-blue);
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.result-status-ok {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: var(--libe-green);
+}
+.result-status-ok .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--libe-green); }
+
+/* ─── Buttons ─── */
+.btn-salvar {
+  background: rgba(11,191,126,0.12); border: 1px solid var(--libe-border-strong);
+  border-radius: 8px; color: var(--libe-green);
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 700;
+  padding: 7px 14px; cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: background .2s, transform .15s; white-space: nowrap; flex-shrink: 0;
+}
+.btn-salvar:hover  { background: rgba(11,191,126,0.22); transform: translateY(-1px); }
+.btn-salvar:active { transform: translateY(0); }
+.btn-salvar.saved  { background: rgba(11,191,126,0.22); border-color: var(--libe-green); cursor: default; }
+.btn-salvar:disabled {
+  background: rgba(240,234,248,0.04); border-color: rgba(240,234,248,0.1);
+  color: var(--libe-muted); cursor: not-allowed; transform: none;
+}
+
+.btn-nova {
+  background: transparent; border: 1px solid rgba(240,234,248,0.12);
+  border-radius: 8px; color: var(--libe-muted);
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600;
+  padding: 7px 12px; cursor: pointer;
+  transition: background .18s, color .18s, border-color .18s; white-space: nowrap;
+}
+.btn-nova:hover { background: rgba(240,234,248,0.05); color: var(--libe-text); border-color: rgba(240,234,248,0.22); }
+
+.btn-limpar {
+  background: transparent; border: 1px solid var(--libe-red-border);
+  border-radius: 8px; color: var(--libe-red);
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600;
+  padding: 7px 12px; cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: background .18s; white-space: nowrap;
+}
+.btn-limpar:hover { background: rgba(255,107,107,0.08); }
+
+/* ─── Section Dividers ─── */
+.sec-divider {
+  display: flex; align-items: center; gap: 8px;
+  margin: 14px 0 8px;
+}
+.sec-icon  {
+  width: 22px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0;
+}
+.sec-label { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.sec-line  { flex: 1; height: 1px; }
+
+.sec--fiscal  .sec-icon  { background: rgba(11,191,126,0.15);  color: var(--libe-green); }
+.sec--fiscal  .sec-label { color: var(--libe-green); }
+.sec--fiscal  .sec-line  { background: rgba(11,191,126,0.14); }
+
+.sec--cnae   .sec-icon  { background: rgba(11,191,126,0.1);   color: var(--libe-green); }
+.sec--cnae   .sec-label { color: rgba(11,191,126,0.8); }
+.sec--cnae   .sec-line  { background: rgba(11,191,126,0.1); }
+
+.sec--end    .sec-icon  { background: rgba(89,171,237,0.15);   color: var(--libe-blue); }
+.sec--end    .sec-label { color: var(--libe-blue); }
+.sec--end    .sec-line  { background: rgba(89,171,237,0.14); }
+
+.sec--contato .sec-icon  { background: rgba(255,179,23,0.13);  color: var(--libe-yellow); }
+.sec--contato .sec-label { color: var(--libe-yellow); }
+.sec--contato .sec-line  { background: rgba(255,179,23,0.12); }
+
+.sec--info   .sec-icon  { background: rgba(89,171,237,0.1);    color: var(--libe-blue); }
+.sec--info   .sec-label { color: rgba(89,171,237,0.8); }
+.sec--info   .sec-line  { background: rgba(89,171,237,0.1); }
+
+/* ─── Data Grid / Cards ─── */
+.data-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 7px; margin-bottom: 7px;
+}
+.data-card {
+  background: var(--libe-card); border: 1px solid var(--libe-border);
+  border-radius: 10px; padding: 10px 12px;
+  transition: border-color .18s;
+}
+.data-card:hover { border-color: var(--libe-border-strong); }
+.data-card.span2 { grid-column: span 2; }
+.dc-label {
+  font-size: 9px; font-weight: 700; color: var(--libe-muted);
+  text-transform: uppercase; letter-spacing: .09em; margin-bottom: 4px;
+}
+.dc-value {
+  font-size: 12px; font-weight: 600; color: var(--libe-text); line-height: 1.35;
+}
+.dc-value.lg    { font-size: 14px; font-weight: 700; }
+.dc-value.green { color: var(--libe-green); }
+.dc-value.blue  { color: var(--libe-blue); }
+.dc-value.muted { color: var(--libe-muted); font-weight: 400; }
+.dc-value.empty-val { color: var(--libe-muted); font-weight: 400; font-style: italic; font-size: 11px; }
+
+/* Situação badge */
+.situacao-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+}
+.situacao-badge.ativa  { background: rgba(11,191,126,0.15); color: var(--libe-green); border: 1px solid rgba(11,191,126,0.3); }
+.situacao-badge.outras { background: rgba(255,107,107,0.12); color: var(--libe-red);   border: 1px solid rgba(255,107,107,0.25); }
+
+/* CNAE tag */
+.cnae-content { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.cnae-desc    { font-size: 12px; font-weight: 600; color: var(--libe-text); flex: 1; }
+.cnae-tag {
+  display: none; align-items: center; gap: 5px;
+  background: rgba(11,191,126,0.1); border: 1px solid var(--libe-border);
+  border-radius: 20px; padding: 2px 8px; flex-shrink: 0;
+  font-size: 9px; font-weight: 700; color: var(--libe-green);
+}
+
+/* QSA */
+.qsa-block { font-size: 11px; color: var(--libe-text); white-space: pre-line; line-height: 1.65; }
+.qsa-empty { font-size: 11px; color: var(--libe-muted); font-style: italic; }
+
+/* ─── Save Status ─── */
+.save-status {
+  display: none; align-items: flex-start; gap: 8px;
+  padding: 10px 14px; border-radius: 10px; margin-top: 10px;
+  font-size: 11px; line-height: 1.5;
+}
+.save-status.visible { display: flex; }
+.save-status.ok  { background: rgba(11,191,126,0.08); border: 1px solid rgba(11,191,126,0.2); color: var(--libe-green); }
+.save-status.err { background: var(--libe-red-bg);    border: 1px solid var(--libe-red-border); color: var(--libe-red); }
+.save-status-icon { font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.save-status-text strong { font-weight: 700; }
+
+/* ─── Result Footer ─── */
+.result-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 10px;
+  border-top: 1px solid var(--libe-border);
+  gap: 10px; flex-wrap: wrap;
+}
+.result-timestamp { font-size: 10px; color: var(--libe-muted); }
+.result-footer-actions { display: flex; gap: 7px; align-items: center; }
+
+/* ─── Saved Data Banner (dados da Empresa) ─── */
+.saved-banner {
+  display: none;
+  background: rgba(11,191,126,0.06); border: 1px solid rgba(11,191,126,0.2);
+  border-radius: 10px; padding: 9px 14px; margin-bottom: 12px;
+  align-items: center; justify-content: space-between; gap: 10px;
+}
+.saved-banner.visible { display: flex; }
+.saved-banner-left { display: flex; align-items: center; gap: 8px; }
+.saved-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--libe-green); flex-shrink: 0; }
+.saved-text { font-size: 11px; color: var(--libe-text); line-height: 1.4; }
+.saved-text strong { color: var(--libe-green); }
+
+/* ─── Modal de Confirmação ─── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(12,2,28,0.82); backdrop-filter: blur(4px);
+  z-index: 999; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.visible { display: flex; }
+.modal-box {
+  background: var(--libe-card2); border: 1px solid var(--libe-red-border);
+  border-radius: 16px; padding: 22px 24px; max-width: 400px; width: 100%;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+  animation: modalIn .2s ease-out;
+}
+@keyframes modalIn { from { opacity:0; transform: scale(.96) translateY(8px); } to { opacity:1; transform: none; } }
+.modal-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(255,107,107,0.1); border: 1px solid var(--libe-red-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; margin-bottom: 14px;
+}
+.modal-title { font-size: 14px; font-weight: 700; color: var(--libe-text); margin-bottom: 8px; }
+.modal-desc  { font-size: 12px; color: var(--libe-muted); line-height: 1.65; margin-bottom: 18px; }
+.modal-desc strong { color: var(--libe-red); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-modal-cancel {
+  background: transparent; border: 1px solid rgba(240,234,248,0.12);
+  border-radius: 8px; color: var(--libe-muted);
+  font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600;
+  padding: 8px 16px; cursor: pointer;
+  transition: background .18s, color .18s;
+}
+.btn-modal-cancel:hover { background: rgba(240,234,248,0.05); color: var(--libe-text); }
+.btn-modal-confirm {
+  background: rgba(255,107,107,0.12); border: 1px solid var(--libe-red-border);
+  border-radius: 8px; color: var(--libe-red);
+  font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 700;
+  padding: 8px 16px; cursor: pointer;
+  transition: background .18s;
+}
+.btn-modal-confirm:hover { background: rgba(255,107,107,0.2); }
+.btn-modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(8px);
+  background: var(--libe-card2); border: 1px solid var(--libe-border);
+  border-radius: 22px; padding: 9px 18px;
+  font-size: 12px; font-weight: 600; color: var(--libe-text);
+  opacity: 0; pointer-events: none; z-index: 1000;
+  transition: opacity .25s, transform .25s; white-space: nowrap;
+}
+.toast.show  { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.green { color: var(--libe-green); border-color: rgba(11,191,126,0.3); }
+.toast.yellow{ color: var(--libe-yellow); border-color: rgba(255,179,23,0.3); }
+.toast.red   { color: var(--libe-red);   border-color: rgba(255,107,107,0.3); }
+
+/* ─── No Mapping Warning ─── */
+.no-mapping-warn {
+  display: none;
+  background: rgba(255,179,23,0.07); border: 1px solid rgba(255,179,23,0.22);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 12px;
+}
+.no-mapping-warn.visible { display: flex; gap: 8px; align-items: flex-start; }
+.warn-icon  { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.warn-text  { font-size: 11px; color: var(--libe-text); line-height: 1.5; }
+.warn-text strong { color: var(--libe-yellow); display: block; margin-bottom: 2px; }
+
+/* ─── Responsive ─── */
+@media (max-width: 520px) {
+  .data-grid { grid-template-columns: 1fr; }
+  .data-card.span2 { grid-column: span 1; }
+  .result-toolbar { flex-direction: column; align-items: flex-start; }
+  .header { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ═══ HEADER ═══ -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">Busca CNPJ</div>
+        <div class="header-sub">Dados da Receita Federal • Aba Empresa</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-limpar" id="btn-limpar-dados" style="display:none">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Limpar Dados
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ COMPANY CONTEXT BAR ═══ -->
+  <div class="company-bar" id="company-bar">
+    <div class="company-bar-left">
+      <div class="company-bar-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#59abed" stroke-width="2.2" stroke-linecap="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <div>
+        <div class="company-bar-label">Empresa Atual</div>
+        <div class="company-bar-name" id="company-bar-name">Carregando...</div>
+        <div class="company-bar-id"  id="company-bar-id"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SAVED DATA BANNER ═══ -->
+  <div class="saved-banner" id="saved-banner">
+    <div class="saved-banner-left">
+      <div class="saved-dot"></div>
+      <div class="saved-text">
+        Dados de CNPJ salvos nos campos da empresa. <strong id="saved-banner-fields">—</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CACHE BANNER ═══ -->
+  <div class="cache-banner" id="cache-banner">
+    <div class="cache-banner-left">
+      <div class="cache-dot"></div>
+      <div class="cache-text">
+        Última consulta via API: <strong id="cache-date">—</strong> · CNPJ: <strong id="cache-cnpj">—</strong>
+      </div>
+    </div>
+    <div class="cache-banner-actions">
+      <button class="btn-cache" id="btn-atualizar">↻ Atualizar</button>
+    </div>
+  </div>
+
+  <!-- ═══ NO MAPPING WARNING ═══ -->
+  <div class="no-mapping-warn" id="no-mapping-warn">
+    <div class="warn-icon">⚠️</div>
+    <div class="warn-text">
+      <strong>Mapeamento não configurado</strong>
+      O App Busca CNPJ não está configurado para esta empresa. Acesse o Painel de Configurações para mapear os campos.
+    </div>
+  </div>
+
+  <!-- ═══ ABAS DE MODO ═══ -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-visualizar" onclick="setMode('visualizar')">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Ver Dados Salvos
+    </button>
+    <button class="mode-tab" id="tab-consultar" onclick="setMode('consultar')">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Nova Consulta
+    </button>
+  </div>
+
+  <!-- ═══ PAINEL: VISUALIZAR DADOS SALVOS ═══ -->
+  <div id="panel-visualizar">
+
+    <!-- Loading -->
+    <div class="loading-state" id="loading-visualizar">
+      <div class="spinner"></div>
+      <div class="loading-label">Carregando dados da empresa...</div>
+    </div>
+
+    <!-- Empty (sem dados salvos) -->
+    <div class="empty-state" id="empty-visualizar" style="display:none">
+      <div class="empty-icon">🏢</div>
+      <div class="empty-title">Nenhum dado de CNPJ encontrado</div>
+      <div class="empty-desc">
+        Esta empresa ainda não possui dados de CNPJ salvos.<br>
+        Use a aba <strong>"Nova Consulta"</strong> para buscar e salvar os dados.
+      </div>
+    </div>
+
+    <!-- Result área (dados salvos da Empresa) -->
+    <div class="result-area" id="result-visualizar">
+
+      <div class="result-toolbar">
+        <div class="result-toolbar-left">
+          <div class="result-source-badge">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            CRM Empresa
+          </div>
+          <div class="result-status-ok">
+            <div class="dot"></div>
+            <span>Dados salvos nos campos</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção 1: Identificação -->
+      <div class="sec-divider sec--fiscal">
+        <div class="sec-icon">🏢</div>
+        <div class="sec-label">Identificação</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card span2">
+          <div class="dc-label">Razão Social</div>
+          <div class="dc-value lg" id="s-razao">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">CNPJ</div>
+          <div class="dc-value green" id="s-cnpj">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Nome Fantasia</div>
+          <div class="dc-value" id="s-fantasia">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Situação Cadastral</div>
+          <div id="s-situacao-wrap"><div class="dc-value" id="s-situacao">—</div></div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Data da Situação</div>
+          <div class="dc-value" id="s-data-situacao">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Capital Social</div>
+          <div class="dc-value green" id="s-capital">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Porte da Empresa</div>
+          <div class="dc-value" id="s-porte">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Natureza Jurídica</div>
+          <div class="dc-value" id="s-natureza">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Data de Abertura</div>
+          <div class="dc-value" id="s-abertura">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Matriz / Filial</div>
+          <div class="dc-value" id="s-matriz">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Simples Nacional</div>
+          <div class="dc-value" id="s-simples">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">MEI</div>
+          <div class="dc-value" id="s-mei">—</div>
+        </div>
+      </div>
+
+      <!-- Seção 2: Atividade -->
+      <div class="sec-divider sec--cnae">
+        <div class="sec-icon">⚙️</div>
+        <div class="sec-label">Atividade Principal</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card span2">
+          <div class="dc-label">CNAE / Atividade</div>
+          <div class="dc-value" id="s-cnae">—</div>
+        </div>
+      </div>
+
+      <!-- Seção 3: Endereço -->
+      <div class="sec-divider sec--end">
+        <div class="sec-icon">📍</div>
+        <div class="sec-label">Endereço</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="dc-label">Logradouro</div>
+          <div class="dc-value" id="s-logradouro">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Número</div>
+          <div class="dc-value" id="s-numero">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Complemento</div>
+          <div class="dc-value" id="s-complemento">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Bairro</div>
+          <div class="dc-value" id="s-bairro">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">CEP</div>
+          <div class="dc-value blue" id="s-cep">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Município / UF</div>
+          <div class="dc-value" id="s-cidade-uf">—</div>
+        </div>
+      </div>
+
+      <!-- Seção 4: Contato -->
+      <div class="sec-divider sec--contato">
+        <div class="sec-icon">📞</div>
+        <div class="sec-label">Contato</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="dc-label">Telefone</div>
+          <div class="dc-value" id="s-telefone">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">E-mail</div>
+          <div class="dc-value" id="s-email">—</div>
+        </div>
+      </div>
+
+      <!-- Seção 5: Informações Adicionais -->
+      <div class="sec-divider sec--info">
+        <div class="sec-icon">👥</div>
+        <div class="sec-label">Informações Adicionais</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card span2">
+          <div class="dc-label">Quadro Societário (QSA)</div>
+          <div id="s-qsa" class="qsa-block">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Status da Busca</div>
+          <div class="dc-value green" id="s-status-busca">—</div>
+        </div>
+      </div>
+
+    </div><!-- /result-visualizar -->
+  </div><!-- /panel-visualizar -->
+
+  <!-- ═══ PAINEL: NOVA CONSULTA ═══ -->
+  <div id="panel-consultar" style="display:none">
+
+    <!-- Input -->
+    <div class="input-section">
+      <div class="input-label">Consultar CNPJ na Receita Federal</div>
+      <div class="input-row">
+        <div class="cnpj-input-wrap">
+          <div class="cnpj-input-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+          </div>
+          <input
+            type="text" id="cnpj-input"
+            class="cnpj-input"
+            placeholder="00.000.000/0000-00"
+            maxlength="18"
+            autocomplete="off"
+            inputmode="numeric"
+          >
+        </div>
+        <button class="btn-consultar" id="btn-consultar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Consultar
+        </button>
+      </div>
+      <div class="validation-msg" id="validation-msg">⚠ CNPJ inválido — verifique os dígitos verificadores</div>
+      <div class="input-hint">Digite apenas números ou use a máscara padrão XX.XXX.XXX/XXXX-XX</div>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" id="error-state">
+      <div class="error-icon">⚠️</div>
+      <div>
+        <div class="error-title" id="error-title">Erro</div>
+        <div class="error-desc"  id="error-desc">Descrição do erro.</div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" id="loading-consultar">
+      <div class="spinner"></div>
+      <div class="loading-label">Consultando <strong>Receita Federal</strong>...</div>
+    </div>
+
+    <!-- Empty (aguardando input) -->
+    <div class="empty-state" id="empty-consultar">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">Pronto para consultar</div>
+      <div class="empty-desc">
+        Digite o CNPJ acima e clique em <strong>Consultar</strong> para buscar<br>
+        os dados diretamente da Receita Federal.
+      </div>
+    </div>
+
+    <!-- Result Area (nova consulta) -->
+    <div class="result-area" id="result-consultar">
+
+      <div class="result-toolbar">
+        <div class="result-toolbar-left">
+          <div class="result-source-badge">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Receita Federal
+          </div>
+          <div class="result-status-ok">
+            <div class="dot"></div>
+            <span id="r-status-text">Empresa ativa</span>
+          </div>
+        </div>
+        <div class="result-toolbar-right">
+          <button class="btn-salvar" id="btn-salvar">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span id="btn-salvar-label">Salvar na Empresa</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Seção 1 -->
+      <div class="sec-divider sec--fiscal">
+        <div class="sec-icon">🏢</div>
+        <div class="sec-label">Identificação</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card span2">
+          <div class="dc-label">Razão Social</div>
+          <div class="dc-value lg" id="r-razao">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">CNPJ</div>
+          <div class="dc-value green" id="r-cnpj">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Nome Fantasia</div>
+          <div class="dc-value" id="r-fantasia">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Situação Cadastral</div>
+          <div id="r-situacao-wrap"><div class="dc-value" id="r-situacao">—</div></div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Data da Situação</div>
+          <div class="dc-value" id="r-data-situacao">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Capital Social</div>
+          <div class="dc-value green" id="r-capital">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Porte da Empresa</div>
+          <div class="dc-value" id="r-porte">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Natureza Jurídica</div>
+          <div class="dc-value" id="r-natureza">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Data de Abertura</div>
+          <div class="dc-value" id="r-abertura">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Matriz / Filial</div>
+          <div class="dc-value" id="r-matriz">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Simples Nacional</div>
+          <div class="dc-value" id="r-simples">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">MEI</div>
+          <div class="dc-value" id="r-mei">—</div>
+        </div>
+      </div>
+
+      <!-- Seção 2 -->
+      <div class="sec-divider sec--cnae">
+        <div class="sec-icon">⚙️</div>
+        <div class="sec-label">Atividade Principal</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card span2">
+          <div class="dc-label">CNAE / Atividade</div>
+          <div class="cnae-content">
+            <div class="dc-value cnae-desc" id="r-cnae-desc">—</div>
+            <div class="cnae-tag" id="r-cnae-tag" style="display:none">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              <span id="r-cnae-cod">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção 3 -->
+      <div class="sec-divider sec--end">
+        <div class="sec-icon">📍</div>
+        <div class="sec-label">Endereço</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="dc-label">Logradouro</div>
+          <div class="dc-value" id="r-logradouro">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Número</div>
+          <div class="dc-value" id="r-numero">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Complemento</div>
+          <div class="dc-value" id="r-complemento">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Bairro</div>
+          <div class="dc-value" id="r-bairro">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">CEP</div>
+          <div class="dc-value blue" id="r-cep">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Município / UF</div>
+          <div class="dc-value" id="r-cidade-uf">—</div>
+        </div>
+      </div>
+
+      <!-- Seção 4 -->
+      <div class="sec-divider sec--contato">
+        <div class="sec-icon">📞</div>
+        <div class="sec-label">Contato</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="dc-label">Telefone</div>
+          <div class="dc-value" id="r-telefone">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">E-mail</div>
+          <div class="dc-value" id="r-email">—</div>
+        </div>
+      </div>
+
+      <!-- Seção 5 -->
+      <div class="sec-divider sec--info">
+        <div class="sec-icon">👥</div>
+        <div class="sec-label">Informações Adicionais</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card span2">
+          <div class="dc-label">Quadro Societário (QSA)</div>
+          <div id="r-qsa" class="qsa-block">—</div>
+        </div>
+        <div class="data-card">
+          <div class="dc-label">Status da Busca</div>
+          <div class="dc-value green" id="r-status-busca">—</div>
+        </div>
+      </div>
+
+      <!-- Save Status -->
+      <div class="save-status" id="save-status">
+        <span class="save-status-icon" id="save-status-icon"></span>
+        <div class="save-status-text" id="save-status-text"></div>
+      </div>
+
+      <!-- Footer -->
+      <div class="result-footer">
+        <div class="result-timestamp" id="r-timestamp">—</div>
+        <div class="result-footer-actions">
+          <button class="btn-nova" id="btn-nova">Nova Consulta</button>
+        </div>
+      </div>
+
+    </div><!-- /result-consultar -->
+  </div><!-- /panel-consultar -->
+
+</div><!-- /wrap -->
+
+<!-- ═══ MODAL CONFIRMAR LIMPEZA ═══ -->
+<div class="modal-overlay" id="modal-limpar">
+  <div class="modal-box">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">Limpar Dados de CNPJ</div>
+    <div class="modal-desc">
+      Esta ação irá apagar <strong>todos os dados de CNPJ salvos</strong> nos campos desta empresa no CRM.<br>
+      Esta operação não pode ser desfeita.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" id="btn-modal-cancel">Cancelar</button>
+      <button class="btn-modal-confirm" id="btn-modal-confirm">
+        <span id="btn-modal-confirm-label">Sim, Limpar Dados</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT — MÓDULO 4: ABA NA EMPRESA
+══════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ─────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────── */
+const STATE = {
+  companyId:    null,
+  companyName:  null,
+  fieldMapping: {},
+  installSuffix: null,
+  lastQueryData: null,   // dados da última consulta via API (para aba Consultar)
+  savedData:    null,    // dados lidos dos campos UF_CRM_ da Empresa
+  saving:       false,
+  clearing:     false,
+  currentMode:  'visualizar',
+};
+
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+/* ─────────────────────────────────────────────
+   DOM HELPERS
+───────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+function setField(id, val) {
+  const el = $(id);
+  if (!el) return;
+  const v = (val !== null && val !== undefined && val !== '' && val !== 'null')
+    ? String(val) : null;
+  if (v) {
+    el.textContent = v;
+    el.className = el.className.replace(/\bempty-val\b/g, '').trim();
+  } else {
+    el.textContent = '—';
+    if (!el.className.includes('empty-val')) {
+      el.className += ' empty-val';
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   TOAST
+───────────────────────────────────────────── */
+let toastTimer = null;
+function toast(msg, type = 'green', ms = 2800) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+/* ─────────────────────────────────────────────
+   FORMATAÇÃO / VALIDAÇÃO CNPJ
+───────────────────────────────────────────── */
+function formatCNPJ(raw) {
+  raw = raw.replace(/\D/g, '').slice(0, 14);
+  if (raw.length === 14)
+    return raw.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  if (raw.length > 8)
+    return raw.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/, (_, a, b, c, d) => `${a}.${b}.${c}/${d}`);
+  if (raw.length > 5)
+    return raw.replace(/^(\d{2})(\d{3})(\d+)$/, (_, a, b, c) => `${a}.${b}.${c}`);
+  if (raw.length > 2)
+    return raw.replace(/^(\d{2})(\d+)$/, (_, a, b) => `${a}.${b}`);
+  return raw;
+}
+
+function validarCNPJ(cnpj) {
+  const n = cnpj.replace(/\D/g, '');
+  if (n.length !== 14) return false;
+  if (/^(\d)\1+$/.test(n)) return false;
+  function calc(len) {
+    let sum = 0, pos = len - 7;
+    for (let i = len; i >= 1; i--) {
+      sum += parseInt(n.charAt(len - i), 10) * pos--;
+      if (pos < 2) pos = 9;
+    }
+    const r = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+    return r === parseInt(n.charAt(len), 10);
+  }
+  return calc(12) && calc(13);
+}
+
+/* ─────────────────────────────────────────────
+   CONVERSÕES OBRIGATÓRIAS
+───────────────────────────────────────────── */
+function parseBRFloat(v) {
+  if (!v || v === 'null') return NaN;
+  return parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+}
+
+function formatDateDisplay(v) {
+  // Bitrix24 devolve como "YYYY-MM-DDT12:00:00+00:00" ou "YYYY-MM-DD"
+  if (!v || v === 'null') return null;
+  const iso = String(v).split('T')[0]; // pegar só a parte de data
+  const parts = iso.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return v;
+}
+
+function formatDateISO(v) {
+  // Recebe YYYY-MM-DD → exibição DD/MM/YYYY
+  if (!v || v === 'null') return null;
+  const parts = String(v).split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return v;
+}
+
+function toB24Date(v) {
+  if (!v || v === 'null') return null;
+  return `${v}T12:00:00`;
+}
+
+function campoValido(v) {
+  return v !== null && v !== undefined && v !== '' && v !== 'null';
+}
+
+/* ─────────────────────────────────────────────
+   QSA
+───────────────────────────────────────────── */
+function formatarQSA(qsa) {
+  const socios = qsa || [];
+  if (socios.length === 0) return null;
+  return socios.map((s, i) => {
+    const entrada = s.data_entrada_sociedade
+      ? s.data_entrada_sociedade.split('-').reverse().join('/')
+      : '—';
+    return `SÓCIO ${i + 1}\nNome: ${s.nome_socio || '—'}\nQualificação: ${s.qualificacao_socio || '—'}\nEntrada: ${entrada}`;
+  }).join('\n\n');
+}
+
+/* ─────────────────────────────────────────────
+   EXTRAI TELEFONE (não-fax)
+───────────────────────────────────────────── */
+function extrairTelefone(telefones) {
+  if (!Array.isArray(telefones) || telefones.length === 0) return null;
+  const tel = telefones.find(t => !t.is_fax) || telefones[0];
+  return tel ? (tel.numero || null) : null;
+}
+
+/* ─────────────────────────────────────────────
+   TIMESTAMP DISPLAY
+───────────────────────────────────────────── */
+function tsDisplay(ts) {
+  return new Date(ts).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+/* ─────────────────────────────────────────────
+   BX24 HELPERS
+───────────────────────────────────────────── */
+function b24Call(method, params) {
+  return new Promise((resolve, reject) => {
+    BX24.callMethod(method, params || {}, result => {
+      if (result.error()) reject(result.error());
+      else resolve(result.data());
+    });
+  });
+}
+
+function b24Batch(calls) {
+  return new Promise((resolve) => {
+    BX24.callBatch(calls, results => {
+      const out = {};
+      for (const k in results) {
+        if (results[k].error()) out[k] = { error: results[k].error() };
+        else                    out[k] = { data:  results[k].data()  };
+      }
+      resolve(out);
+    });
+  });
+}
+
+/* ─────────────────────────────────────────────
+   MODO (abas)
+───────────────────────────────────────────── */
+function setMode(mode) {
+  STATE.currentMode = mode;
+  $('tab-visualizar').classList.toggle('active', mode === 'visualizar');
+  $('tab-consultar').classList.toggle('active',  mode === 'consultar');
+  $('panel-visualizar').style.display = mode === 'visualizar' ? '' : 'none';
+  $('panel-consultar').style.display  = mode === 'consultar'  ? '' : 'none';
+}
+
+/* ─────────────────────────────────────────────
+   RENDERIZAR DADOS SALVOS (painel Visualizar)
+───────────────────────────────────────────── */
+function renderSavedData(companyFields) {
+  const m = STATE.fieldMapping;
+
+  function getVal(chave) {
+    const mapeado = m[chave];
+    if (!mapeado || !mapeado.field_id || mapeado.field_id === '__skip__') return null;
+    return companyFields[mapeado.field_id] || null;
+  }
+
+  // Razão Social: nativo TITLE
+  const razaoSocial = companyFields['TITLE'] || null;
+  setField('s-razao', razaoSocial);
+
+  setField('s-cnpj',          getVal('cnpj'));
+  setField('s-fantasia',      getVal('nome_fantasia'));
+
+  // Situação — com badge
+  const sit = getVal('situacao_cadastral');
+  const sitWrap = $('s-situacao-wrap');
+  if (campoValido(sit)) {
+    const sitUpper = String(sit).toUpperCase();
+    const badge = document.createElement('span');
+    badge.className = 'situacao-badge ' + (sitUpper === 'ATIVA' ? 'ativa' : 'outras');
+    badge.textContent = sit;
+    sitWrap.innerHTML = '';
+    sitWrap.appendChild(badge);
+  } else {
+    sitWrap.innerHTML = '<div class="dc-value empty-val">—</div>';
+  }
+
+  // Datas — converter de Bitrix24 para exibição
+  const dataSit = getVal('data_situacao_cadastral');
+  setField('s-data-situacao', dataSit ? formatDateDisplay(dataSit) : null);
+
+  const dataAbert = getVal('data_inicio_atividade');
+  setField('s-abertura', dataAbert ? formatDateDisplay(dataAbert) : null);
+
+  // Capital Social — double do Bitrix24, exibir formatado
+  const capVal = getVal('capital_social');
+  if (campoValido(capVal)) {
+    const capN = parseFloat(capVal);
+    setField('s-capital', isNaN(capN) ? capVal :
+      capN.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
+  } else {
+    setField('s-capital', null);
+  }
+
+  setField('s-porte',      getVal('porte_empresa'));
+  setField('s-natureza',   getVal('natureza_juridica'));
+  setField('s-matriz',     getVal('matriz_filial'));
+  setField('s-simples',    getVal('opcao_simples'));
+  setField('s-mei',        getVal('opcao_mei'));
+  setField('s-cnae',       getVal('cnae_principal'));
+  setField('s-logradouro', getVal('logradouro'));
+  setField('s-numero',     getVal('numero'));
+  setField('s-complemento',getVal('complemento'));
+  setField('s-bairro',     getVal('bairro'));
+  setField('s-cep',        getVal('cep'));
+
+  const cid = getVal('municipio');
+  const uf  = getVal('uf');
+  setField('s-cidade-uf', [cid, uf].filter(Boolean).join(' — ') || null);
+
+  setField('s-telefone',    getVal('telefone'));
+  setField('s-email',       getVal('email'));
+  setField('s-status-busca',getVal('status_busca'));
+
+  // QSA — campo string multilinha salvo
+  const qsaVal = getVal('QSA');
+  const qsaEl  = $('s-qsa');
+  if (campoValido(qsaVal)) {
+    qsaEl.className = 'qsa-block';
+    qsaEl.textContent = qsaVal;
+  } else {
+    qsaEl.className = 'qsa-empty';
+    qsaEl.textContent = 'Nenhum sócio informado';
+  }
+
+  // Verificar quantos campos têm dados
+  const camposPreenchidos = [
+    getVal('cnpj'), getVal('nome_fantasia'), getVal('situacao_cadastral'),
+    razaoSocial
+  ].filter(campoValido).length;
+
+  return camposPreenchidos;
+}
+
+/* ─────────────────────────────────────────────
+   RENDERIZAR RESULTADO DA API (painel Consultar)
+───────────────────────────────────────────── */
+function renderResult(data, ts) {
+  setField('r-razao',       data.razao_social);
+  setField('r-cnpj',        data.cnpj);
+  setField('r-fantasia',    data.nome_fantasia);
+
+  // Situação badge
+  const sit = data.situacao_cadastral || '';
+  const rSitWrap = $('r-situacao-wrap');
+  if (campoValido(sit)) {
+    const badge = document.createElement('span');
+    badge.className = 'situacao-badge ' + (sit.toUpperCase() === 'ATIVA' ? 'ativa' : 'outras');
+    badge.textContent = sit;
+    rSitWrap.innerHTML = '';
+    rSitWrap.appendChild(badge);
+  } else {
+    rSitWrap.innerHTML = '<div class="dc-value">—</div>';
+  }
+
+  setField('r-data-situacao', formatDateISO(data.data_situacao_cadastral));
+
+  const capRaw = data.capital_social;
+  if (campoValido(capRaw)) {
+    const capN = parseBRFloat(capRaw);
+    setField('r-capital', isNaN(capN) ? capRaw :
+      capN.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
+  } else {
+    setField('r-capital', null);
+  }
+
+  setField('r-porte',    data.porte_empresa);
+  setField('r-abertura', formatDateISO(data.data_inicio_atividade));
+  setField('r-natureza', data.natureza_juridica);
+
+  const mtz = data.identificador_matriz_filial === 1 ? 'MATRIZ' :
+              data.identificador_matriz_filial === 2 ? 'FILIAL' :
+              data.descricao_identificador_matriz_filial || data.matriz_filial || null;
+  setField('r-matriz',  mtz);
+  setField('r-simples', data.opcao_simples);
+  setField('r-mei',     data.opcao_mei);
+
+  // CNAE
+  const cnaeDesc = data.cnae_fiscal_descricao || data.cnae_principal;
+  const cnaeCod  = data.cnae_fiscal ? String(data.cnae_fiscal) : null;
+  setField('r-cnae-desc', cnaeDesc);
+  if (campoValido(cnaeCod)) {
+    $('r-cnae-tag').style.display = 'inline-flex';
+    setField('r-cnae-cod', cnaeCod);
+  } else {
+    $('r-cnae-tag').style.display = 'none';
+  }
+
+  setField('r-logradouro',  data.logradouro);
+  setField('r-numero',      data.numero);
+  setField('r-complemento', data.complemento);
+  setField('r-bairro',      data.bairro);
+  setField('r-cep',         data.cep);
+  const cidadeUF = [data.municipio, data.uf].filter(Boolean).join(' — ');
+  setField('r-cidade-uf', cidadeUF || null);
+
+  const tel = extrairTelefone(data.telefones) || data.telefone;
+  setField('r-telefone', tel);
+  setField('r-email',    data.email);
+
+  const socios = data.QSA || data.qsa || [];
+  const qsaFormatado = formatarQSA(socios);
+  const qsaEl = $('r-qsa');
+  if (qsaFormatado) {
+    qsaEl.className = 'qsa-block';
+    qsaEl.textContent = qsaFormatado;
+  } else {
+    qsaEl.className = 'qsa-empty';
+    qsaEl.textContent = 'Nenhum sócio informado';
+  }
+  setField('r-status-busca', 'Encontrado');
+
+  const sitStatus = data.situacao_cadastral || '';
+  $('r-status-text').textContent = sitStatus || 'Dados consultados';
+
+  setField('r-timestamp', ts ? `Consultado em ${tsDisplay(ts)}` : '');
+
+  resetSaveButton();
+  $('save-status').classList.remove('visible', 'ok', 'err');
+}
+
+function resetSaveButton() {
+  const btn = $('btn-salvar');
+  btn.classList.remove('saved');
+  btn.disabled = false;
+  $('btn-salvar-label').innerHTML = `
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:middle;margin-right:3px">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </svg>
+    Salvar na Empresa`;
+}
+
+/* ─────────────────────────────────────────────
+   ESTADOS DO PAINEL CONSULTAR
+───────────────────────────────────────────── */
+function showConsultarState(which) {
+  $('loading-consultar').classList.toggle('visible', which === 'loading');
+  $('empty-consultar').style.display     = which === 'empty'   ? 'block' : 'none';
+  $('result-consultar').classList.toggle('visible', which === 'result');
+  $('error-state').classList.toggle('visible', which === 'error');
+}
+
+/* ─────────────────────────────────────────────
+   ESTADOS DO PAINEL VISUALIZAR
+───────────────────────────────────────────── */
+function showVisualizarState(which) {
+  $('loading-visualizar').classList.toggle('visible', which === 'loading');
+  $('empty-visualizar').style.display   = which === 'empty'   ? 'block' : 'none';
+  $('result-visualizar').classList.toggle('visible', which === 'result');
+}
+
+/* ─────────────────────────────────────────────
+   CONSTRUIR PAYLOAD para crm.company.update
+───────────────────────────────────────────── */
+function buildPayload(data) {
+  const mapping = STATE.fieldMapping;
+  const payload = {};
+
+  function mapField(chaveReceita, valor) {
+    const m = mapping[chaveReceita];
+    if (!m || !m.field_id || m.field_id === '' || m.field_id === '__skip__') return;
+    if (!campoValido(valor)) return;
+    payload[m.field_id] = valor;
+  }
+
+  mapField('razao_social',          data.razao_social);
+  mapField('cnpj',                  data.cnpj);
+  mapField('nome_fantasia',         data.nome_fantasia);
+  mapField('situacao_cadastral',    data.situacao_cadastral);
+  mapField('porte_empresa',         data.porte_empresa);
+  mapField('natureza_juridica',     data.natureza_juridica);
+  mapField('logradouro',            data.logradouro);
+  mapField('numero',                data.numero);
+  mapField('complemento',           data.complemento);
+  mapField('bairro',                data.bairro);
+  mapField('cep',                   data.cep);
+  mapField('municipio',             data.municipio);
+  mapField('uf',                    data.uf);
+  mapField('email',                 data.email);
+  mapField('cnae_principal',        data.cnae_fiscal_descricao || data.cnae_principal);
+
+  // opcao_simples / opcao_mei — SEMPRE string, nunca boolean
+  mapField('opcao_simples', campoValido(data.opcao_simples) ? String(data.opcao_simples) : null);
+  mapField('opcao_mei',     campoValido(data.opcao_mei)     ? String(data.opcao_mei)     : null);
+
+  // Matriz/Filial
+  const mtz = data.identificador_matriz_filial === 1 ? 'MATRIZ' :
+              data.identificador_matriz_filial === 2 ? 'FILIAL' :
+              data.descricao_identificador_matriz_filial || data.matriz_filial || null;
+  mapField('matriz_filial', mtz);
+
+  // Datas — sufixo T12:00:00
+  mapField('data_inicio_atividade',   toB24Date(data.data_inicio_atividade));
+  mapField('data_situacao_cadastral', toB24Date(data.data_situacao_cadastral));
+
+  // Capital Social → double
+  const capFloat = parseBRFloat(data.capital_social);
+  if (!isNaN(capFloat) && campoValido(data.capital_social)) {
+    mapField('capital_social', capFloat);
+  }
+
+  // Telefone
+  const tel = extrairTelefone(data.telefones) || data.telefone;
+  mapField('telefone', tel);
+
+  // QSA — string multilinha
+  const socios  = data.QSA || data.qsa || [];
+  const qsaText = formatarQSA(socios);
+  if (campoValido(qsaText)) mapField('QSA', qsaText);
+
+  // Status da Busca
+  mapField('status_busca', 'Encontrado');
+
+  return payload;
+}
+
+/* ─────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────── */
+BX24.init(() => {
+  loadInitialData();
+});
+
+async function loadInitialData() {
+  showVisualizarState('loading');
+
+  try {
+    // 1. Contexto do placement → COMPANY_ID (direto, sem mediar por Deal)
+    const ctx = BX24.placement.getContext();
+    STATE.companyId = ctx && ctx.ID ? String(ctx.ID) : null;
+
+    if (!STATE.companyId) {
+      // Dev/fallback sem placement real
+      renderDevMode();
+      return;
+    }
+
+    // 2. Carregar em paralelo: options + company fields
+    const batchResult = await b24Batch({
+      options: { method: 'app.option.get', params: {} },
+      company: { method: 'crm.company.get', params: { id: STATE.companyId } },
+    });
+
+    // ── Processar options ──
+    if (batchResult.options && batchResult.options.data) {
+      const opts = batchResult.options.data;
+      STATE.fieldMapping  = opts.field_mapping || {};
+      STATE.installSuffix = opts.app_install_suffix || null;
+
+      // Cache desta empresa
+      const cacheKey = `company_${STATE.companyId}_last_query`;
+      const cacheObj = opts[cacheKey];
+      if (cacheObj && cacheObj.timestamp) {
+        const age = Date.now() - cacheObj.timestamp;
+        if (age < CACHE_TTL_MS) {
+          STATE.lastQueryData = cacheObj.dados_completos;
+          showCacheBanner(cacheObj.timestamp, cacheObj.cnpj);
+        }
+        // Cache expirado: banner NÃO é exibido, mas dados salvos no CRM prevalecem
+      }
+    }
+
+    // Verificar se mapeamento está configurado
+    const temMapeamento = STATE.fieldMapping && Object.keys(STATE.fieldMapping).length > 0;
+    if (!temMapeamento) {
+      $('no-mapping-warn').classList.add('visible');
+    }
+
+    // ── Processar company ──
+    if (batchResult.company && batchResult.company.data) {
+      const company = batchResult.company.data;
+      STATE.companyName = company.TITLE || `Empresa #${STATE.companyId}`;
+      STATE.savedData   = company;
+
+      // Atualizar barra de contexto
+      $('company-bar-name').textContent = STATE.companyName;
+      $('company-bar-id').textContent   = `ID: ${STATE.companyId}`;
+
+      // Tentar renderizar dados salvos
+      const fieldsCount = renderSavedData(company);
+
+      if (fieldsCount > 0 || hasSavedCNPJData(company)) {
+        showVisualizarState('result');
+        $('saved-banner').classList.add('visible');
+        const cnpjSalvo = getSavedFieldValue('cnpj', company);
+        $('saved-banner-fields').textContent = cnpjSalvo
+          ? `CNPJ: ${cnpjSalvo}`
+          : `${fieldsCount} campo(s) preenchido(s)`;
+        // Mostrar botão "Limpar Dados"
+        $('btn-limpar-dados').style.display = 'flex';
+      } else {
+        showVisualizarState('empty');
+      }
+
+    } else {
+      // Falha ao carregar empresa
+      $('company-bar-name').textContent = `Empresa #${STATE.companyId}`;
+      showVisualizarState('empty');
+    }
+
+    // Se havia cache de consulta anterior, pré-preencher painel Consultar
+    if (STATE.lastQueryData) {
+      renderResult(STATE.lastQueryData, null);
+      showConsultarState('result');
+    } else {
+      showConsultarState('empty');
+    }
+
+  } catch (err) {
+    console.error('[BuscaCNPJ:Empresa] Erro na inicialização:', err);
+    showVisualizarState('empty');
+    $('company-bar-name').textContent = 'Erro ao carregar empresa';
+  }
+}
+
+/* ─────────────────────────────────────────────
+   VERIFICAR SE HÁ DADOS CNPJ SALVOS
+───────────────────────────────────────────── */
+function hasSavedCNPJData(companyFields) {
+  if (!STATE.fieldMapping) return false;
+  const chaves = ['cnpj', 'razao_social', 'situacao_cadastral', 'nome_fantasia'];
+  return chaves.some(chave => {
+    const m = STATE.fieldMapping[chave];
+    if (!m || !m.field_id) return false;
+    return campoValido(companyFields[m.field_id]);
+  });
+}
+
+function getSavedFieldValue(chave, companyFields) {
+  const m = STATE.fieldMapping[chave];
+  if (!m || !m.field_id) return null;
+  return companyFields[m.field_id] || null;
+}
+
+/* ─────────────────────────────────────────────
+   DEV MODE (sem placement real)
+───────────────────────────────────────────── */
+function renderDevMode() {
+  STATE.companyId   = '888';
+  STATE.companyName = 'Empresa Demonstração LTDA';
+  $('company-bar-name').textContent = STATE.companyName;
+  $('company-bar-id').textContent   = 'ID: 888 (modo dev)';
+  showVisualizarState('empty');
+  showConsultarState('empty');
+}
+
+/* ─────────────────────────────────────────────
+   CACHE BANNER
+───────────────────────────────────────────── */
+function showCacheBanner(ts, cnpj) {
+  $('cache-date').textContent = tsDisplay(ts);
+  $('cache-cnpj').textContent = cnpj || '—';
+  $('cache-banner').classList.add('visible');
+}
+
+function hideCacheBanner() {
+  $('cache-banner').classList.remove('visible');
+}
+
+/* ─────────────────────────────────────────────
+   INPUT — formatação e validação
+───────────────────────────────────────────── */
+const inputEl = $('cnpj-input');
+
+inputEl.addEventListener('input', function () {
+  const raw = this.value.replace(/\D/g, '');
+  this.value = formatCNPJ(raw);
+  $('validation-msg').classList.remove('visible');
+  this.classList.remove('valid', 'invalid');
+  if (raw.length === 14) {
+    const ok = validarCNPJ(raw);
+    this.classList.add(ok ? 'valid' : 'invalid');
+    if (!ok) $('validation-msg').classList.add('visible');
+  }
+});
+
+inputEl.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') $('btn-consultar').click();
+});
+
+/* ─────────────────────────────────────────────
+   CONSULTAR (painel Nova Consulta)
+───────────────────────────────────────────── */
+$('btn-consultar').addEventListener('click', () => doSearch());
+
+async function doSearch(cnpjOverride) {
+  const raw = (cnpjOverride || inputEl.value).replace(/\D/g, '');
+
+  if (raw.length !== 14 || !validarCNPJ(raw)) {
+    $('validation-msg').classList.add('visible');
+    inputEl.classList.add('invalid');
+    inputEl.focus();
+    return;
+  }
+
+  $('validation-msg').classList.remove('visible');
+  inputEl.classList.remove('invalid', 'valid');
+  inputEl.classList.add('valid');
+  hideCacheBanner();
+  showConsultarState('loading');
+
+  try {
+    const resp = await fetch(`https://api.opencnpj.org/cnpj/${raw}`);
+
+    if (!resp.ok) {
+      let errMsg = `Erro HTTP ${resp.status}`;
+      if (resp.status === 404) errMsg = 'CNPJ não encontrado na base da Receita Federal.';
+      else if (resp.status === 429) errMsg = 'Limite de consultas atingido. Tente novamente em instantes.';
+      showConsultarError('CNPJ não encontrado', errMsg);
+      return;
+    }
+
+    const data = await resp.json();
+    data._cnpj_raw = raw;
+    if (!data.cnpj) data.cnpj = formatCNPJ(raw);
+
+    const now = Date.now();
+    STATE.lastQueryData = data;
+
+    // Salvar cache com chave da Empresa (não da Deal)
+    await salvarCache(raw, data, now);
+
+    renderResult(data, now);
+    showConsultarState('result');
+    showCacheBanner(now, data.cnpj || formatCNPJ(raw));
+    toast('✓ Consulta realizada com sucesso', 'green');
+
+  } catch (err) {
+    console.error('[BuscaCNPJ:Empresa] Erro na consulta:', err);
+    showConsultarError(
+      'Falha na conexão com a API',
+      'Não foi possível conectar à API da Receita Federal. Verifique sua conexão e tente novamente.'
+    );
+  }
+}
+
+function showConsultarError(title, desc) {
+  $('error-title').textContent = title;
+  $('error-desc').textContent  = desc;
+  showConsultarState('error');
+}
+
+/* ─────────────────────────────────────────────
+   SALVAR CACHE (chave company_)
+───────────────────────────────────────────── */
+async function salvarCache(cnpjRaw, dados, ts) {
+  if (!STATE.companyId) return;
+  try {
+    const cacheKey = `company_${STATE.companyId}_last_query`;
+    await b24Call('app.option.set', {
+      options: {
+        [cacheKey]: {
+          cnpj: formatCNPJ(cnpjRaw),
+          dados_completos: dados,
+          timestamp: ts,
+        }
+      }
+    });
+  } catch (e) {
+    console.warn('[BuscaCNPJ:Empresa] Falha ao salvar cache:', e);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   SALVAR NA EMPRESA
+───────────────────────────────────────────── */
+$('btn-salvar').addEventListener('click', () => doSave());
+
+async function doSave() {
+  if (STATE.saving) return;
+  if (!STATE.lastQueryData) return;
+  if (!STATE.companyId) {
+    toast('⚠ Empresa não identificada', 'yellow', 3000);
+    return;
+  }
+
+  STATE.saving = true;
+  const btn = $('btn-salvar');
+  btn.disabled = true;
+  $('btn-salvar-label').textContent = 'Salvando...';
+
+  try {
+    const payload = buildPayload(STATE.lastQueryData);
+
+    if (Object.keys(payload).length === 0) {
+      toast('Nenhum campo mapeado para salvar', 'yellow', 3000);
+      btn.disabled = false;
+      resetSaveButton();
+      STATE.saving = false;
+      return;
+    }
+
+    // Uma única chamada de update (campos filtrados e convertidos)
+    await b24Call('crm.company.update', {
+      id: STATE.companyId,
+      fields: payload,
+    });
+
+    // Sucesso
+    btn.classList.add('saved');
+    btn.disabled = false;
+    $('btn-salvar-label').textContent = `✓ Salvo em ${STATE.companyName || 'Empresa'}`;
+
+    showSaveStatus('ok',
+      `<strong>Dados salvos com sucesso</strong> em <strong>${STATE.companyName || 'Empresa #' + STATE.companyId}</strong> · ${Object.keys(payload).length} campos atualizados.`
+    );
+    toast(`✓ Dados salvos na empresa`, 'green', 3000);
+
+    // Mostrar botão limpar dados
+    $('btn-limpar-dados').style.display = 'flex';
+
+    // Recarregar dados salvos no painel Visualizar
+    setTimeout(async () => {
+      try {
+        const company = await b24Call('crm.company.get', { id: STATE.companyId });
+        STATE.savedData = company;
+        renderSavedData(company);
+        $('saved-banner').classList.add('visible');
+        const cnpjSalvo = getSavedFieldValue('cnpj', company);
+        $('saved-banner-fields').textContent = cnpjSalvo
+          ? `CNPJ: ${cnpjSalvo}`
+          : `${Object.keys(payload).length} campo(s) atualizado(s)`;
+        showVisualizarState('result');
+      } catch (_) { /* silencioso */ }
+    }, 600);
+
+  } catch (err) {
+    console.error('[BuscaCNPJ:Empresa] Erro ao salvar:', err);
+    btn.disabled = false;
+    resetSaveButton();
+    showSaveStatus('err', `Falha ao salvar: ${err.message || JSON.stringify(err)}`);
+    toast('✕ Erro ao salvar na empresa', 'red', 3500);
+  } finally {
+    STATE.saving = false;
+  }
+}
+
+function showSaveStatus(type, html) {
+  const el = $('save-status');
+  el.classList.remove('visible', 'ok', 'err');
+  el.classList.add('visible', type);
+  $('save-status-icon').textContent = type === 'ok' ? '✓' : '✕';
+  $('save-status-text').innerHTML   = html;
+}
+
+/* ─────────────────────────────────────────────
+   BOTÃO ATUALIZAR (cache banner)
+───────────────────────────────────────────── */
+$('btn-atualizar').addEventListener('click', () => {
+  const raw = $('cache-cnpj').textContent.replace(/\D/g, '');
+  if (raw.length === 14) {
+    setMode('consultar');
+    inputEl.value = formatCNPJ(raw);
+    inputEl.classList.add('valid');
+    hideCacheBanner();
+    doSearch(raw);
+  }
+});
+
+/* ─────────────────────────────────────────────
+   BOTÃO NOVA CONSULTA
+───────────────────────────────────────────── */
+$('btn-nova').addEventListener('click', () => {
+  // Limpa estado visual — não apaga cache persistido
+  inputEl.value = '';
+  inputEl.classList.remove('valid', 'invalid');
+  STATE.lastQueryData = null;
+  showConsultarState('empty');
+  $('error-state').classList.remove('visible');
+  $('save-status').classList.remove('visible', 'ok', 'err');
+  // Cache banner permanece (cache ainda existe no app.option)
+});
+
+/* ─────────────────────────────────────────────
+   LIMPAR DADOS — abrir modal
+───────────────────────────────────────────── */
+$('btn-limpar-dados').addEventListener('click', () => {
+  $('modal-limpar').classList.add('visible');
+});
+
+$('btn-modal-cancel').addEventListener('click', () => {
+  $('modal-limpar').classList.remove('visible');
+});
+
+// Fechar ao clicar fora do box
+$('modal-limpar').addEventListener('click', function (e) {
+  if (e.target === this) this.classList.remove('visible');
+});
+
+/* ─────────────────────────────────────────────
+   LIMPAR DADOS — confirmar
+───────────────────────────────────────────── */
+$('btn-modal-confirm').addEventListener('click', () => doLimpar());
+
+async function doLimpar() {
+  if (STATE.clearing) return;
+  if (!STATE.companyId) return;
+
+  STATE.clearing = true;
+  const btn = $('btn-modal-confirm');
+  btn.disabled = true;
+  $('btn-modal-confirm-label').textContent = 'Limpando...';
+
+  try {
+    // Construir payload com todos os campos mapeados setados como string vazia
+    const mapping  = STATE.fieldMapping;
+    const emptyPayload = {};
+
+    const chavesCNPJ = [
+      'cnpj', 'nome_fantasia', 'situacao_cadastral', 'data_situacao_cadastral',
+      'capital_social', 'porte_empresa', 'natureza_juridica', 'data_inicio_atividade',
+      'matriz_filial', 'opcao_simples', 'opcao_mei', 'cnae_principal',
+      'logradouro', 'numero', 'complemento', 'bairro', 'cep',
+      'municipio', 'uf', 'telefone', 'email', 'QSA', 'status_busca'
+    ];
+
+    chavesCNPJ.forEach(chave => {
+      const m = mapping[chave];
+      if (m && m.field_id && m.field_id !== '__skip__') {
+        emptyPayload[m.field_id] = '';
+      }
+    });
+
+    if (Object.keys(emptyPayload).length === 0) {
+      toast('Nenhum campo mapeado para limpar', 'yellow', 3000);
+      btn.disabled = false;
+      $('btn-modal-confirm-label').textContent = 'Sim, Limpar Dados';
+      STATE.clearing = false;
+      $('modal-limpar').classList.remove('visible');
+      return;
+    }
+
+    await b24Call('crm.company.update', {
+      id: STATE.companyId,
+      fields: emptyPayload,
+    });
+
+    // Fechar modal
+    $('modal-limpar').classList.remove('visible');
+
+    // Atualizar UI
+    STATE.savedData = null;
+    STATE.lastQueryData = null;
+    $('saved-banner').classList.remove('visible');
+    $('btn-limpar-dados').style.display = 'none';
+    hideCacheBanner();
+
+    // Mudar para painel visualizar e exibir estado vazio
+    setMode('visualizar');
+    showVisualizarState('empty');
+    showConsultarState('empty');
+
+    toast('✓ Dados de CNPJ removidos da empresa', 'green', 3200);
+
+  } catch (err) {
+    console.error('[BuscaCNPJ:Empresa] Erro ao limpar dados:', err);
+    $('modal-limpar').classList.remove('visible');
+    toast('✕ Erro ao limpar dados da empresa', 'red', 3500);
+  } finally {
+    STATE.clearing = false;
+    const btnC = $('btn-modal-confirm');
+    btnC.disabled = false;
+    $('btn-modal-confirm-label').textContent = 'Sim, Limpar Dados';
+  }
+}
+</script>
+</body>
+</html>

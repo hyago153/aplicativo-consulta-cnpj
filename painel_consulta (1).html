@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Busca CNPJ — Painel de Consulta</title>
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── Reset & Variables ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --libe-green:  #0bbf7e;
+  --libe-dark:   #0c021c;
+  --libe-blue:   #59abed;
+  --libe-yellow: #ffb317;
+  --libe-card:   #140a28;
+  --libe-card2:  #1a0f33;
+  --libe-border: rgba(11,191,126,0.18);
+  --libe-border-strong: rgba(11,191,126,0.4);
+  --libe-text:   #f0eaf8;
+  --libe-muted:  rgba(240,234,248,0.55);
+  --libe-red:    #ff6b6b;
+  --libe-red-bg: rgba(255,107,107,0.08);
+  --libe-red-border: rgba(255,107,107,0.25);
+}
+
+html, body {
+  background: var(--libe-dark);
+  color: var(--libe-text);
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Layout Wrapper ─── */
+.wrap {
+  padding: 18px 20px 32px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ─── Header ─── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: rgba(11,191,126,0.12);
+  border: 1px solid var(--libe-border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.header-icon svg { color: var(--libe-green); }
+.header-title { font-size: 15px; font-weight: 700; color: var(--libe-text); line-height: 1.2; }
+.header-sub   { font-size: 10px; color: var(--libe-muted); font-weight: 400; margin-top: 1px; }
+.badge-live {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(11,191,126,0.08);
+  border: 1px solid var(--libe-border-strong);
+  border-radius: 20px; padding: 4px 11px;
+  font-size: 10px; font-weight: 600; color: var(--libe-green);
+}
+.badge-live .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--libe-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+/* ─── Deal Context Bar ─── */
+.deal-bar {
+  background: var(--libe-card);
+  border: 1px solid rgba(89,171,237,0.2);
+  border-radius: 10px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+}
+.deal-bar-left { display: flex; align-items: center; gap: 8px; }
+.deal-bar-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: rgba(89,171,237,0.12);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.deal-bar-label { font-size: 9px; font-weight: 700; color: var(--libe-muted); text-transform: uppercase; letter-spacing: .09em; }
+.deal-bar-name  { font-size: 12px; font-weight: 600; color: var(--libe-text); margin-top: 1px; }
+.deal-company-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(11,191,126,0.07);
+  border: 1px solid var(--libe-border);
+  border-radius: 20px; padding: 4px 10px;
+  font-size: 10px; font-weight: 600; color: var(--libe-green);
+  white-space: nowrap;
+}
+.deal-company-pill.no-company {
+  color: var(--libe-yellow);
+  background: rgba(255,179,23,0.07);
+  border-color: rgba(255,179,23,0.25);
+}
+
+/* ─── Cache Banner ─── */
+.cache-banner {
+  display: none;
+  background: rgba(255,179,23,0.07);
+  border: 1px solid rgba(255,179,23,0.22);
+  border-radius: 10px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  align-items: center; justify-content: space-between; gap: 10px;
+}
+.cache-banner.visible { display: flex; }
+.cache-banner-left { display: flex; align-items: center; gap: 8px; }
+.cache-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--libe-yellow); flex-shrink: 0; }
+.cache-text { font-size: 11px; color: var(--libe-text); line-height: 1.4; }
+.cache-text strong { color: var(--libe-yellow); }
+.cache-banner-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-cache {
+  background: transparent;
+  border: 1px solid rgba(255,179,23,0.35);
+  border-radius: 7px; color: var(--libe-yellow);
+  font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700;
+  padding: 5px 11px; cursor: pointer; transition: background .2s; white-space: nowrap;
+}
+.btn-cache:hover { background: rgba(255,179,23,0.1); }
+.btn-cache.dismiss {
+  color: var(--libe-muted);
+  border-color: rgba(240,234,248,0.12);
+}
+.btn-cache.dismiss:hover { background: rgba(240,234,248,0.04); }
+
+/* ─── No-Company Warning ─── */
+.no-company-warn {
+  display: none;
+  background: rgba(255,179,23,0.07);
+  border: 1px solid rgba(255,179,23,0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.no-company-warn.visible { display: flex; gap: 8px; align-items: flex-start; }
+.warn-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.warn-text { font-size: 11px; color: var(--libe-text); line-height: 1.5; }
+.warn-text strong { color: var(--libe-yellow); display: block; margin-bottom: 2px; }
+
+/* ─── Input Section ─── */
+.input-section {
+  background: var(--libe-card);
+  border: 1px solid var(--libe-border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.input-label {
+  font-size: 9px; font-weight: 700; color: var(--libe-muted);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.input-label::before {
+  content: '';
+  display: block; width: 3px; height: 12px;
+  background: var(--libe-green); border-radius: 2px;
+}
+.input-row { display: flex; gap: 8px; align-items: stretch; }
+.cnpj-input-wrap { flex: 1; position: relative; }
+.cnpj-input-icon {
+  position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%); pointer-events: none; opacity: 0.45;
+}
+.cnpj-input {
+  width: 100%;
+  background: #0a0617;
+  border: 1.5px solid var(--libe-border);
+  border-radius: 9px;
+  color: var(--libe-text);
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px; font-weight: 600;
+  padding: 11px 12px 11px 38px;
+  outline: none;
+  letter-spacing: .04em;
+  transition: border-color .2s, box-shadow .2s;
+}
+.cnpj-input::placeholder { color: var(--libe-muted); font-size: 13px; font-weight: 400; letter-spacing: 0; }
+.cnpj-input:focus { border-color: var(--libe-green); box-shadow: 0 0 0 3px rgba(11,191,126,0.1); }
+.cnpj-input.valid { border-color: rgba(11,191,126,0.55); }
+.cnpj-input.invalid { border-color: rgba(255,107,107,0.5); }
+.btn-consultar {
+  background: var(--libe-green);
+  color: var(--libe-dark);
+  border: none; border-radius: 9px;
+  font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 700;
+  padding: 0 20px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: filter .2s, transform .15s;
+  white-space: nowrap;
+  min-height: 44px;
+}
+.btn-consultar:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-consultar:active { transform: translateY(0); filter: brightness(0.97); }
+.btn-consultar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+.input-hint {
+  font-size: 10px; color: var(--libe-muted);
+  margin-top: 7px;
+  display: flex; align-items: center; gap: 5px;
+}
+.input-hint::before {
+  content: ''; width: 3px; height: 3px; border-radius: 50%;
+  background: var(--libe-muted); flex-shrink: 0;
+}
+
+/* ─── Validation Error Inline ─── */
+.validation-msg {
+  display: none;
+  font-size: 10px; font-weight: 600; color: var(--libe-red);
+  margin-top: 5px; padding-left: 4px;
+}
+.validation-msg.visible { display: block; }
+
+/* ─── Error State ─── */
+.error-state {
+  display: none;
+  background: var(--libe-red-bg);
+  border: 1px solid var(--libe-red-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.error-state.visible { display: flex; gap: 10px; align-items: flex-start; }
+.error-icon { font-size: 15px; flex-shrink: 0; }
+.error-content {}
+.error-title { font-size: 12px; font-weight: 700; color: var(--libe-red); margin-bottom: 2px; }
+.error-desc  { font-size: 11px; color: var(--libe-muted); line-height: 1.5; }
+
+/* ─── Loading ─── */
+.loading-state {
+  display: none;
+  text-align: center; padding: 40px 20px;
+}
+.loading-state.visible { display: block; }
+.spinner {
+  width: 30px; height: 30px;
+  border: 2.5px solid var(--libe-border);
+  border-top-color: var(--libe-green);
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-label { font-size: 12px; color: var(--libe-muted); }
+.loading-label strong { color: var(--libe-green); }
+
+/* ─── Empty State ─── */
+.empty-state { text-align: center; padding: 38px 20px; }
+.empty-icon {
+  width: 52px; height: 52px;
+  border: 2px dashed var(--libe-border);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px; font-size: 20px;
+}
+.empty-title { font-size: 13px; font-weight: 600; color: var(--libe-text); margin-bottom: 5px; }
+.empty-desc  { font-size: 11px; color: var(--libe-muted); line-height: 1.65; }
+
+/* ─── Result Area ─── */
+.result-area { display: none; }
+.result-area.visible { display: block; }
+
+/* Result Toolbar */
+.result-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; gap: 10px;
+}
+.result-toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.result-source-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(89,171,237,0.1);
+  border: 1px solid rgba(89,171,237,0.28);
+  border-radius: 20px; padding: 4px 10px;
+  font-size: 10px; font-weight: 700; color: var(--libe-blue);
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.result-status-ok {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: var(--libe-green);
+}
+.result-status-ok .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--libe-green); }
+
+.btn-salvar {
+  background: rgba(11,191,126,0.12);
+  border: 1px solid var(--libe-border-strong);
+  border-radius: 8px;
+  color: var(--libe-green);
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 700;
+  padding: 7px 14px; cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: background .2s, transform .15s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.btn-salvar:hover { background: rgba(11,191,126,0.22); transform: translateY(-1px); }
+.btn-salvar:active { transform: translateY(0); }
+.btn-salvar.saved {
+  background: rgba(11,191,126,0.22);
+  border-color: var(--libe-green);
+  cursor: default;
+}
+.btn-salvar:disabled {
+  background: rgba(240,234,248,0.04);
+  border-color: rgba(240,234,248,0.1);
+  color: var(--libe-muted); cursor: not-allowed;
+  transform: none;
+}
+.btn-salvar:disabled:hover { background: rgba(240,234,248,0.04); transform: none; }
+
+/* ─── Section Dividers ─── */
+.sec-divider {
+  display: flex; align-items: center; gap: 8px;
+  margin: 14px 0 8px;
+}
+.sec-icon {
+  width: 22px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0;
+}
+.sec-label { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.sec-line  { flex: 1; height: 1px; }
+
+.sec--fiscal .sec-icon  { background: rgba(11,191,126,0.15); color: var(--libe-green); }
+.sec--fiscal .sec-label { color: var(--libe-green); }
+.sec--fiscal .sec-line  { background: rgba(11,191,126,0.14); }
+
+.sec--cnae .sec-icon  { background: rgba(11,191,126,0.1); color: var(--libe-green); }
+.sec--cnae .sec-label { color: rgba(11,191,126,0.8); }
+.sec--cnae .sec-line  { background: rgba(11,191,126,0.1); }
+
+.sec--end .sec-icon  { background: rgba(89,171,237,0.15); color: var(--libe-blue); }
+.sec--end .sec-label { color: var(--libe-blue); }
+.sec--end .sec-line  { background: rgba(89,171,237,0.14); }
+
+.sec--contato .sec-icon  { background: rgba(255,179,23,0.13); color: var(--libe-yellow); }
+.sec--contato .sec-label { color: var(--libe-yellow); }
+.sec--contato .sec-line  { background: rgba(255,179,23,0.12); }
+
+.sec--info .sec-icon  { background: rgba(89,171,237,0.1); color: var(--libe-blue); }
+.sec--info .sec-label { color: rgba(89,171,237,0.8); }
+.sec--info .sec-line  { background: rgba(89,171,237,0.1); }
+
+/* ─── Data Grid / Cards ─── */
+.data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+.data-card {
+  background: var(--libe-card);
+  border: 1px solid var(--libe-border);
+  border-radius: 10px; padding: 10px 12px;
+  transition: border-color .18s;
+}
+.data-card:hover { border-color: var(--libe-border-strong); }
+.data-card.span2 { grid-column: span 2; }
+.data-card.span3 { grid-column: span 2; } /* full width — alias */
+
+.dc-label {
+  font-size: 9px; font-weight: 700;
+  color: var(--libe-muted);
+  text-transform: uppercase; letter-spacing: .09em;
+  margin-bottom: 4px;
+}
+.dc-value {
+  font-size: 12px; font-weight: 600;
+  color: var(--libe-text); line-height: 1.35;
+}
+.dc-value.lg   { font-size: 14px; font-weight: 700; }
+.dc-value.green { color: var(--libe-green); }
+.dc-value.blue  { color: var(--libe-blue); }
+.dc-value.muted { color: var(--libe-muted); font-weight: 400; }
+
+/* Situação badge */
+.situacao-badge {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+}
+.situacao-badge.ativa  { background: rgba(11,191,126,0.15); color: var(--libe-green); border: 1px solid rgba(11,191,126,0.3); }
+.situacao-badge.outras { background: rgba(255,107,107,0.12); color: var(--libe-red);   border: 1px solid rgba(255,107,107,0.25); }
+
+/* CNAE Tag */
+.cnae-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(89,171,237,0.1);
+  border: 1px solid rgba(89,171,237,0.22);
+  border-radius: 6px; padding: 3px 8px;
+  font-size: 10px; font-weight: 600; color: var(--libe-blue);
+  margin-top: 5px;
+}
+
+/* QSA Block */
+.qsa-block {
+  font-size: 11px; color: var(--libe-text);
+  line-height: 1.75; white-space: pre-line;
+}
+.qsa-empty { font-size: 11px; color: var(--libe-muted); font-style: italic; }
+
+/* ─── Save Status Banner (post-save) ─── */
+.save-status {
+  display: none;
+  border-radius: 10px; padding: 10px 14px;
+  margin-top: 10px;
+  align-items: center; gap: 8px;
+}
+.save-status.visible { display: flex; }
+.save-status.ok {
+  background: rgba(11,191,126,0.08);
+  border: 1px solid rgba(11,191,126,0.25);
+}
+.save-status.err {
+  background: var(--libe-red-bg);
+  border: 1px solid var(--libe-red-border);
+}
+.save-status-text { font-size: 11px; line-height: 1.5; }
+.save-status.ok .save-status-text { color: var(--libe-text); }
+.save-status.ok .save-status-text strong { color: var(--libe-green); }
+.save-status.err .save-status-text { color: var(--libe-red); }
+
+/* ─── Result Footer ─── */
+.result-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--libe-border);
+  margin-top: 14px; gap: 10px;
+}
+.result-timestamp { font-size: 10px; color: var(--libe-muted); }
+.btn-nova {
+  background: transparent;
+  border: 1px solid var(--libe-border);
+  border-radius: 8px; color: var(--libe-muted);
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600;
+  padding: 6px 14px; cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.btn-nova:hover { border-color: var(--libe-border-strong); color: var(--libe-text); }
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--libe-card2);
+  border: 1px solid var(--libe-border-strong);
+  border-radius: 10px; padding: 10px 18px;
+  font-size: 12px; font-weight: 600;
+  opacity: 0; pointer-events: none;
+  transition: opacity .28s, transform .28s;
+  white-space: nowrap; z-index: 99;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.green { color: var(--libe-green); border-color: rgba(11,191,126,0.45); }
+.toast.red   { color: var(--libe-red);   border-color: rgba(255,107,107,0.35); }
+.toast.yellow{ color: var(--libe-yellow);border-color: rgba(255,179,23,0.35); }
+
+/* ─── Saving Overlay (spinner on save button) ─── */
+.btn-salvar .btn-spinner {
+  display: none;
+  width: 11px; height: 11px;
+  border: 2px solid rgba(11,191,126,0.3);
+  border-top-color: var(--libe-green);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+.btn-salvar.saving .btn-spinner { display: block; }
+.btn-salvar.saving .btn-label   { display: none; }
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(11,191,126,0.2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ══════════════════ HEADER ══════════════════ -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">App Busca CNPJ</div>
+        <div class="header-sub">Painel de Consulta · Aba no Negócio</div>
+      </div>
+    </div>
+    <div class="badge-live"><span class="dot"></span>Receita Federal</div>
+  </div>
+
+  <!-- ══════════════════ DEAL CONTEXT BAR ══════════════════ -->
+  <div class="deal-bar" id="deal-bar">
+    <div class="deal-bar-left">
+      <div class="deal-bar-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#59abed" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+      </div>
+      <div>
+        <div class="deal-bar-label">Negócio atual</div>
+        <div class="deal-bar-name" id="deal-name">Carregando…</div>
+      </div>
+    </div>
+    <div class="deal-company-pill" id="company-pill">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span id="company-name">verificando...</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════ NO COMPANY WARNING ══════════════════ -->
+  <div class="no-company-warn" id="no-company-warn">
+    <div class="warn-icon">⚠</div>
+    <div class="warn-text">
+      <strong>Este negócio não possui empresa vinculada.</strong>
+      Abra o negócio, vincule uma empresa e retorne para salvar os dados consultados. A consulta de CNPJ continua disponível normalmente.
+    </div>
+  </div>
+
+  <!-- ══════════════════ CACHE BANNER ══════════════════ -->
+  <div class="cache-banner" id="cache-banner">
+    <div class="cache-banner-left">
+      <span class="cache-dot"></span>
+      <div class="cache-text" id="cache-text">Exibindo dados em cache · última consulta em <strong id="cache-date">—</strong> · CNPJ: <strong id="cache-cnpj">—</strong></div>
+    </div>
+    <div class="cache-banner-actions">
+      <button class="btn-cache" id="btn-atualizar">↻ Atualizar</button>
+      <button class="btn-cache dismiss" id="btn-dismiss-cache">Nova consulta</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════ INPUT SECTION ══════════════════ -->
+  <div class="input-section">
+    <div class="input-label">Consultar CNPJ</div>
+    <div class="input-row">
+      <div class="cnpj-input-wrap">
+        <svg class="cnpj-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f0eaf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+        <input
+          type="text"
+          class="cnpj-input"
+          id="cnpj-input"
+          placeholder="00.000.000/0001-00"
+          maxlength="18"
+          autocomplete="off"
+          spellcheck="false"
+        >
+      </div>
+      <button class="btn-consultar" id="btn-consultar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        Consultar
+      </button>
+    </div>
+    <div class="validation-msg" id="validation-msg">⚠ CNPJ inválido — verifique e tente novamente</div>
+    <div class="input-hint">Digite o CNPJ com ou sem pontuação — a validação ocorre automaticamente</div>
+  </div>
+
+  <!-- ══════════════════ ERROR STATE ══════════════════ -->
+  <div class="error-state" id="error-state">
+    <div class="error-icon">✕</div>
+    <div class="error-content">
+      <div class="error-title" id="error-title">Erro na consulta</div>
+      <div class="error-desc"  id="error-desc">—</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ LOADING STATE ══════════════════ -->
+  <div class="loading-state" id="loading-state">
+    <div class="spinner"></div>
+    <div class="loading-label">Consultando <strong>Receita Federal</strong>…</div>
+  </div>
+
+  <!-- ══════════════════ EMPTY STATE ══════════════════ -->
+  <div class="empty-state" id="empty-state">
+    <div class="empty-icon">🔍</div>
+    <div class="empty-title">Nenhuma consulta realizada</div>
+    <div class="empty-desc">Digite o CNPJ da empresa acima e clique em<br>"Consultar" para visualizar os dados da Receita Federal.</div>
+  </div>
+
+  <!-- ══════════════════ RESULT AREA ══════════════════ -->
+  <div class="result-area" id="result-area">
+
+    <!-- Toolbar -->
+    <div class="result-toolbar">
+      <div class="result-toolbar-left">
+        <div class="result-source-badge">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+          OpenCNPJ
+        </div>
+        <div class="result-status-ok">
+          <span class="dot"></span>
+          <span id="r-situacao-badge">ATIVA</span>
+        </div>
+      </div>
+      <button class="btn-salvar" id="btn-salvar" title="Vincule uma empresa a este negócio para salvar os dados.">
+        <div class="btn-spinner"></div>
+        <span class="btn-label" id="btn-salvar-label">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:middle;margin-right:3px">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Salvar em Empresa
+        </span>
+      </button>
+    </div>
+
+    <!-- ── SEÇÃO 1: Dados Fiscais ── -->
+    <div class="sec-divider sec--fiscal">
+      <div class="sec-icon">🏢</div>
+      <div class="sec-label">Dados Fiscais</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="data-grid">
+      <div class="data-card span2">
+        <div class="dc-label">Razão Social</div>
+        <div class="dc-value lg" id="r-razao">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">CNPJ</div>
+        <div class="dc-value" id="r-cnpj">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Nome Fantasia</div>
+        <div class="dc-value" id="r-fantasia">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Situação Cadastral</div>
+        <div class="dc-value" id="r-situacao">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Data da Situação</div>
+        <div class="dc-value" id="r-data-situacao">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Capital Social</div>
+        <div class="dc-value green" id="r-capital">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Porte da Empresa</div>
+        <div class="dc-value" id="r-porte">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Data de Abertura</div>
+        <div class="dc-value" id="r-abertura">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Natureza Jurídica</div>
+        <div class="dc-value" id="r-natureza">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Matriz / Filial</div>
+        <div class="dc-value" id="r-matriz">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Simples Nacional</div>
+        <div class="dc-value" id="r-simples">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">MEI</div>
+        <div class="dc-value" id="r-mei">—</div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 2: CNAE Principal ── -->
+    <div class="sec-divider sec--cnae">
+      <div class="sec-icon">⚙</div>
+      <div class="sec-label">CNAE Principal</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="data-grid">
+      <div class="data-card span2">
+        <div class="dc-label">Atividade Econômica</div>
+        <div class="dc-value" id="r-cnae-desc">—</div>
+        <div class="cnae-tag" id="r-cnae-tag" style="display:none">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <span id="r-cnae-cod">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 3: Endereço ── -->
+    <div class="sec-divider sec--end">
+      <div class="sec-icon">📍</div>
+      <div class="sec-label">Endereço</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="data-grid">
+      <div class="data-card">
+        <div class="dc-label">Logradouro</div>
+        <div class="dc-value" id="r-logradouro">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Número</div>
+        <div class="dc-value" id="r-numero">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Complemento</div>
+        <div class="dc-value" id="r-complemento">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Bairro</div>
+        <div class="dc-value" id="r-bairro">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">CEP</div>
+        <div class="dc-value blue" id="r-cep">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Município / UF</div>
+        <div class="dc-value" id="r-cidade-uf">—</div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 4: Contato ── -->
+    <div class="sec-divider sec--contato">
+      <div class="sec-icon">📞</div>
+      <div class="sec-label">Contato</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="data-grid">
+      <div class="data-card">
+        <div class="dc-label">Telefone</div>
+        <div class="dc-value" id="r-telefone">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">E-mail</div>
+        <div class="dc-value" id="r-email">—</div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 5: Informações Adicionais ── -->
+    <div class="sec-divider sec--info">
+      <div class="sec-icon">👥</div>
+      <div class="sec-label">Informações Adicionais</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="data-grid">
+      <div class="data-card span2">
+        <div class="dc-label">Quadro Societário (QSA)</div>
+        <div id="r-qsa" class="qsa-block">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Status da Busca</div>
+        <div class="dc-value green" id="r-status-busca">—</div>
+      </div>
+    </div>
+
+    <!-- Save Status Banner -->
+    <div class="save-status" id="save-status">
+      <span id="save-status-icon"></span>
+      <div class="save-status-text" id="save-status-text"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="result-footer">
+      <div class="result-timestamp" id="r-timestamp">—</div>
+      <button class="btn-nova" id="btn-nova">Nova Consulta</button>
+    </div>
+
+  </div><!-- /result-area -->
+
+</div><!-- /wrap -->
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT — MÓDULO 3: PAINEL DE CONSULTA
+══════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ─────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────── */
+const STATE = {
+  dealId:      null,
+  companyId:   null,
+  companyName: null,
+  dealTitle:   null,
+  fieldMapping: {},
+  lastQueryData: null,     // dados brutos da última consulta bem-sucedida
+  installSuffix: null,
+  saving: false,
+};
+
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+/* ─────────────────────────────────────────────
+   HELPERS — DOM
+───────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+function setField(id, val) {
+  const el = $(id);
+  if (!el) return;
+  const display = (val !== null && val !== undefined && val !== '' && val !== 'null')
+    ? String(val) : '—';
+  el.textContent = display;
+}
+
+function showState(which) {
+  $('loading-state').classList.toggle('visible', which === 'loading');
+  $('empty-state').style.display   = which === 'empty'   ? 'block' : 'none';
+  $('result-area').classList.toggle('visible', which === 'result');
+  $('error-state').classList.toggle('visible', which === 'error');
+}
+
+/* ─────────────────────────────────────────────
+   HELPERS — Toast
+───────────────────────────────────────────── */
+let toastTimer = null;
+function toast(msg, type = 'green', ms = 2800) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+/* ─────────────────────────────────────────────
+   HELPERS — Formatação CNPJ
+───────────────────────────────────────────── */
+function formatCNPJ(raw) {
+  raw = raw.replace(/\D/g, '').slice(0, 14);
+  if (raw.length === 14)
+    return raw.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  if (raw.length > 8)
+    return raw.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/, (_, a,b,c,d) => `${a}.${b}.${c}/${d}`);
+  if (raw.length > 5)
+    return raw.replace(/^(\d{2})(\d{3})(\d+)$/, (_, a,b,c) => `${a}.${b}.${c}`);
+  if (raw.length > 2)
+    return raw.replace(/^(\d{2})(\d+)$/, (_, a,b) => `${a}.${b}`);
+  return raw;
+}
+
+/* ─────────────────────────────────────────────
+   VALIDAÇÃO DE CNPJ (dígito verificador)
+───────────────────────────────────────────── */
+function validarCNPJ(cnpj) {
+  const n = cnpj.replace(/\D/g, '');
+  if (n.length !== 14) return false;
+  if (/^(\d)\1+$/.test(n)) return false; // todos iguais
+  function calc(len) {
+    let sum = 0, pos = len - 7;
+    for (let i = len; i >= 1; i--) {
+      sum += parseInt(n.charAt(len - i), 10) * pos--;
+      if (pos < 2) pos = 9;
+    }
+    const r = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+    return r === parseInt(n.charAt(len), 10);
+  }
+  return calc(12) && calc(13);
+}
+
+/* ─────────────────────────────────────────────
+   HELPERS — Conversões obrigatórias
+───────────────────────────────────────────── */
+function parseBRFloat(v) {
+  if (!v || v === 'null') return null;
+  return parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+}
+
+function formatDateISO(v) {
+  // recebe YYYY-MM-DD → formata para exibição DD/MM/YYYY
+  if (!v || v === 'null') return null;
+  const parts = String(v).split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return v;
+}
+
+function toB24Date(v) {
+  // recebe YYYY-MM-DD → envia ao Bitrix24 com T12:00:00
+  if (!v || v === 'null') return null;
+  return `${v}T12:00:00`;
+}
+
+function campoValido(v) {
+  return v !== null && v !== undefined && v !== '' && v !== 'null';
+}
+
+/* ─────────────────────────────────────────────
+   HELPERS — QSA
+───────────────────────────────────────────── */
+function formatarQSA(qsa) {
+  const socios = qsa || [];
+  if (socios.length === 0) return null;
+  return socios.map((s, i) => {
+    const entrada = s.data_entrada_sociedade
+      ? s.data_entrada_sociedade.split('-').reverse().join('/')
+      : '—';
+    return `SÓCIO ${i + 1}\nNome: ${s.nome_socio || '—'}\nQualificação: ${s.qualificacao_socio || '—'}\nEntrada: ${entrada}`;
+  }).join('\n\n');
+}
+
+/* ─────────────────────────────────────────────
+   HELPERS — Extrair telefone não-fax
+───────────────────────────────────────────── */
+function extrairTelefone(telefones) {
+  if (!Array.isArray(telefones) || telefones.length === 0) return null;
+  const tel = telefones.find(t => !t.is_fax) || telefones[0];
+  if (!tel) return null;
+  return tel.numero || null;
+}
+
+/* ─────────────────────────────────────────────
+   HELPERS — Timestamp display
+───────────────────────────────────────────── */
+function tsDisplay(ts) {
+  return new Date(ts).toLocaleString('pt-BR', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  });
+}
+
+/* ─────────────────────────────────────────────
+   RENDERIZAR RESULTADO NAS 5 SEÇÕES
+───────────────────────────────────────────── */
+function renderResult(data, ts) {
+  // ── Seção 1: Dados Fiscais ──
+  setField('r-razao',        data.razao_social);
+  setField('r-cnpj',         data.cnpj);
+  setField('r-fantasia',     data.nome_fantasia);
+  setField('r-situacao',     data.situacao_cadastral);
+  setField('r-situacao-badge', data.situacao_cadastral);
+  setField('r-data-situacao', formatDateISO(data.data_situacao_cadastral));
+
+  // Capital Social: formatar moeda BR
+  const capRaw = data.capital_social;
+  if (campoValido(capRaw)) {
+    const capFloat = parseBRFloat(capRaw);
+    setField('r-capital', isNaN(capFloat) ? capRaw :
+      capFloat.toLocaleString('pt-BR', { style:'currency', currency:'BRL' }));
+  } else {
+    setField('r-capital', null);
+  }
+
+  setField('r-porte',     data.porte_empresa);
+  setField('r-abertura',  formatDateISO(data.data_inicio_atividade));
+  setField('r-natureza',  data.natureza_juridica);
+  setField('r-matriz',    data.identificador_matriz_filial === 1 ? 'MATRIZ' :
+                           data.identificador_matriz_filial === 2 ? 'FILIAL' :
+                           data.descricao_identificador_matriz_filial || data.matriz_filial || null);
+  setField('r-simples',   data.opcao_simples);
+  setField('r-mei',       data.opcao_mei);
+
+  // Badge situação
+  const sitBadge = $('r-situacao-badge');
+  if (sitBadge) {
+    const sit = (data.situacao_cadastral || '').toUpperCase();
+    sitBadge.className = 'situacao-badge ' + (sit === 'ATIVA' ? 'ativa' : 'outras');
+  }
+
+  // ── Seção 2: CNAE ──
+  const cnaeDesc = data.cnae_fiscal_descricao || data.cnae_principal;
+  const cnaeCod  = data.cnae_fiscal ? String(data.cnae_fiscal) : null;
+  setField('r-cnae-desc', cnaeDesc);
+  if (campoValido(cnaeCod)) {
+    $('r-cnae-tag').style.display = 'inline-flex';
+    setField('r-cnae-cod', cnaeCod);
+  } else {
+    $('r-cnae-tag').style.display = 'none';
+  }
+
+  // ── Seção 3: Endereço ──
+  setField('r-logradouro',  data.logradouro);
+  setField('r-numero',      data.numero);
+  setField('r-complemento', data.complemento);
+  setField('r-bairro',      data.bairro);
+  setField('r-cep',         data.cep);
+  const cidadeUF = [data.municipio, data.uf].filter(Boolean).join(' — ');
+  setField('r-cidade-uf', cidadeUF || null);
+
+  // ── Seção 4: Contato ──
+  const tel = extrairTelefone(data.telefones) || data.telefone;
+  setField('r-telefone', tel);
+  setField('r-email',    data.email);
+
+  // ── Seção 5: Informações Adicionais ──
+  const socios = data.QSA || data.qsa || [];
+  const qsaFormatado = formatarQSA(socios);
+  const qsaEl = $('r-qsa');
+  if (qsaFormatado) {
+    qsaEl.className = 'qsa-block';
+    qsaEl.textContent = qsaFormatado;
+  } else {
+    qsaEl.className = 'qsa-empty';
+    qsaEl.textContent = 'Nenhum sócio informado';
+  }
+  setField('r-status-busca', 'Encontrado');
+
+  // Timestamp
+  setField('r-timestamp', ts ? `Consultado em ${tsDisplay(ts)}` : '');
+
+  // Reset save state
+  resetSaveButton();
+  $('save-status').classList.remove('visible', 'ok', 'err');
+}
+
+function resetSaveButton() {
+  const btn = $('btn-salvar');
+  btn.classList.remove('saved', 'saving');
+  btn.disabled = !STATE.companyId;
+  $('btn-salvar-label').innerHTML = `
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:middle;margin-right:3px">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </svg>
+    Salvar em Empresa`;
+}
+
+/* ─────────────────────────────────────────────
+   CONSTRUIR PAYLOAD para crm.company.update
+───────────────────────────────────────────── */
+function buildPayload(data) {
+  const mapping = STATE.fieldMapping;
+  const payload = {};
+
+  function mapField(chaveReceita, valor) {
+    const m = mapping[chaveReceita];
+    if (!m || !m.field_id || m.field_id === '' || m.field_id === '__skip__') return;
+    if (!campoValido(valor)) return;
+    payload[m.field_id] = valor;
+  }
+
+  // Razão Social → TITLE (nativo)
+  mapField('razao_social', data.razao_social);
+
+  // Strings diretos
+  mapField('cnpj',              data.cnpj);
+  mapField('nome_fantasia',     data.nome_fantasia);
+  mapField('situacao_cadastral',data.situacao_cadastral);
+  mapField('porte_empresa',     data.porte_empresa);
+  mapField('natureza_juridica', data.natureza_juridica);
+  mapField('logradouro',        data.logradouro);
+  mapField('numero',            data.numero);
+  mapField('complemento',       data.complemento);
+  mapField('bairro',            data.bairro);
+  mapField('cep',               data.cep);
+  mapField('municipio',         data.municipio);
+  mapField('uf',                data.uf);
+  mapField('email',             data.email);
+  mapField('cnae_principal',    data.cnae_fiscal_descricao || data.cnae_principal);
+
+  // opcao_simples / opcao_mei — SEMPRE string, nunca boolean
+  mapField('opcao_simples', campoValido(data.opcao_simples) ? String(data.opcao_simples) : null);
+  mapField('opcao_mei',     campoValido(data.opcao_mei)     ? String(data.opcao_mei)     : null);
+
+  // Matriz/Filial
+  const mtz = data.identificador_matriz_filial === 1 ? 'MATRIZ' :
+               data.identificador_matriz_filial === 2 ? 'FILIAL' :
+               data.descricao_identificador_matriz_filial || data.matriz_filial || null;
+  mapField('matriz_filial', mtz);
+
+  // Datas — sufixo T12:00:00
+  mapField('data_inicio_atividade',   toB24Date(data.data_inicio_atividade));
+  mapField('data_situacao_cadastral', toB24Date(data.data_situacao_cadastral));
+
+  // Capital Social — double
+  const capFloat = parseBRFloat(data.capital_social);
+  if (!isNaN(capFloat) && campoValido(data.capital_social)) {
+    mapField('capital_social', capFloat);
+  }
+
+  // Telefone — primeiro não-fax
+  const tel = extrairTelefone(data.telefones) || data.telefone;
+  mapField('telefone', tel);
+
+  // QSA — string multilinha
+  const socios = data.QSA || data.qsa || [];
+  const qsaText = formatarQSA(socios);
+  if (campoValido(qsaText)) mapField('QSA', qsaText);
+
+  // Status da Busca — gerado pelo app
+  mapField('status_busca', 'Encontrado');
+
+  return payload;
+}
+
+/* ─────────────────────────────────────────────
+   BX24 HELPERS
+───────────────────────────────────────────── */
+function b24Call(method, params) {
+  return new Promise((resolve, reject) => {
+    BX24.callMethod(method, params || {}, result => {
+      if (result.error()) reject(result.error());
+      else resolve(result.data());
+    });
+  });
+}
+
+function b24Batch(calls) {
+  return new Promise((resolve, reject) => {
+    BX24.callBatch(calls, results => {
+      // results é { key: result }
+      const out = {};
+      let hasError = false;
+      for (const k in results) {
+        if (results[k].error()) {
+          hasError = true;
+          out[k] = { error: results[k].error() };
+        } else {
+          out[k] = { data: results[k].data() };
+        }
+      }
+      resolve(out); // sempre resolve — erros individuais no objeto
+    });
+  });
+}
+
+/* ─────────────────────────────────────────────
+   INIT — BX24.init + carregamento inicial
+───────────────────────────────────────────── */
+BX24.init(() => {
+  loadInitialData();
+});
+
+async function loadInitialData() {
+  try {
+    // 1. Contexto do placement → DEAL_ID
+    const ctx = BX24.placement.getContext();
+    STATE.dealId = ctx && ctx.ID ? String(ctx.ID) : null;
+
+    if (!STATE.dealId) {
+      // Dev/fallback sem placement real
+      renderDevMode();
+      return;
+    }
+
+    // 2. Carregar em paralelo: options + deal
+    const batchResult = await b24Batch({
+      options:  { method: 'app.option.get', params: {} },
+      deal:     { method: 'crm.deal.get',   params: { id: STATE.dealId } },
+    });
+
+    // ── Processar options ──
+    if (batchResult.options && batchResult.options.data) {
+      const opts = batchResult.options.data;
+      STATE.fieldMapping   = opts.field_mapping  || {};
+      STATE.installSuffix  = opts.app_install_suffix || null;
+
+      // Cache desta deal
+      const cacheKey = `deal_${STATE.dealId}_last_query`;
+      const cacheObj = opts[cacheKey];
+      if (cacheObj && cacheObj.timestamp) {
+        const age = Date.now() - cacheObj.timestamp;
+        if (age < CACHE_TTL_MS) {
+          // Cache válido
+          STATE.lastQueryData = cacheObj.dados_completos;
+          showCacheBanner(cacheObj.timestamp, cacheObj.cnpj);
+          renderResult(cacheObj.dados_completos, cacheObj.timestamp);
+          showState('result');
+        }
+      }
+    }
+
+    // ── Processar deal ──
+    if (batchResult.deal && batchResult.deal.data) {
+      const deal = batchResult.deal.data;
+      STATE.dealTitle   = deal.TITLE || `Negócio #${STATE.dealId}`;
+      STATE.companyId   = deal.COMPANY_ID ? String(deal.COMPANY_ID) : null;
+
+      // Atualizar deal bar
+      $('deal-name').textContent = STATE.dealTitle;
+
+      if (STATE.companyId) {
+        // Buscar nome da empresa
+        try {
+          const company = await b24Call('crm.company.get', { id: STATE.companyId });
+          STATE.companyName = company.TITLE || `Empresa #${STATE.companyId}`;
+          const pill = $('company-pill');
+          pill.className = 'deal-company-pill';
+          $('company-name').textContent = STATE.companyName;
+        } catch {
+          $('company-name').textContent = `Empresa #${STATE.companyId}`;
+        }
+      } else {
+        const pill = $('company-pill');
+        pill.className = 'deal-company-pill no-company';
+        $('company-name').textContent = 'Sem empresa vinculada';
+        $('no-company-warn').classList.add('visible');
+      }
+
+      // Atualizar botão salvar
+      resetSaveButton();
+    } else {
+      $('deal-name').textContent = `Negócio #${STATE.dealId}`;
+    }
+
+    // Se não tem cache → estado vazio
+    if (!STATE.lastQueryData) {
+      showState('empty');
+    }
+
+  } catch (err) {
+    console.error('[BuscaCNPJ] Erro na inicialização:', err);
+    showState('empty');
+    $('deal-name').textContent = 'Erro ao carregar contexto';
+  }
+}
+
+/* ─────────────────────────────────────────────
+   DEV MODE (sem placement real)
+───────────────────────────────────────────── */
+function renderDevMode() {
+  STATE.dealId    = '999';
+  STATE.companyId = '888';
+  STATE.companyName = 'Empresa Exemplo Ltda';
+  STATE.dealTitle   = 'Negócio de Demonstração';
+  $('deal-name').textContent = STATE.dealTitle;
+  $('company-name').textContent = STATE.companyName;
+  showState('empty');
+}
+
+/* ─────────────────────────────────────────────
+   CACHE BANNER
+───────────────────────────────────────────── */
+function showCacheBanner(ts, cnpj) {
+  $('cache-date').textContent = tsDisplay(ts);
+  $('cache-cnpj').textContent = cnpj || '—';
+  $('cache-banner').classList.add('visible');
+}
+
+function hideCacheBanner() {
+  $('cache-banner').classList.remove('visible');
+}
+
+/* ─────────────────────────────────────────────
+   INPUT — formatação e validação ao digitar
+───────────────────────────────────────────── */
+const inputEl = $('cnpj-input');
+
+inputEl.addEventListener('input', function () {
+  const raw = this.value.replace(/\D/g, '');
+  this.value = formatCNPJ(raw);
+  $('validation-msg').classList.remove('visible');
+  this.classList.remove('valid', 'invalid');
+  if (raw.length === 14) {
+    const ok = validarCNPJ(raw);
+    this.classList.add(ok ? 'valid' : 'invalid');
+    if (!ok) $('validation-msg').classList.add('visible');
+  }
+});
+
+inputEl.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') $('btn-consultar').click();
+});
+
+/* ─────────────────────────────────────────────
+   CONSULTAR
+───────────────────────────────────────────── */
+$('btn-consultar').addEventListener('click', () => doSearch());
+
+async function doSearch(cnpjOverride) {
+  const raw = (cnpjOverride || inputEl.value).replace(/\D/g, '');
+
+  // Validação
+  if (raw.length !== 14 || !validarCNPJ(raw)) {
+    $('validation-msg').classList.add('visible');
+    inputEl.classList.add('invalid');
+    inputEl.focus();
+    return;
+  }
+
+  $('validation-msg').classList.remove('visible');
+  inputEl.classList.remove('invalid', 'valid');
+  inputEl.classList.add('valid');
+  hideCacheBanner();
+  showState('loading');
+  $('error-state').classList.remove('visible');
+
+  try {
+    const resp = await fetch(`https://api.opencnpj.org/cnpj/${raw}`);
+
+    if (!resp.ok) {
+      let errMsg = `Erro HTTP ${resp.status}`;
+      if (resp.status === 404) errMsg = 'CNPJ não encontrado na base da Receita Federal.';
+      else if (resp.status === 429) errMsg = 'Limite de consultas atingido. Tente novamente em instantes.';
+      showError('CNPJ não encontrado', errMsg);
+      await salvarStatusBusca('Não encontrado');
+      return;
+    }
+
+    const data = await resp.json();
+
+    // Normalizar CNPJ exibido
+    data._cnpj_raw = raw;
+    if (!data.cnpj) data.cnpj = formatCNPJ(raw);
+
+    // Salvar cache
+    const now = Date.now();
+    STATE.lastQueryData = data;
+    await salvarCache(raw, data, now);
+
+    // Renderizar
+    renderResult(data, now);
+    showState('result');
+    showCacheBanner(now, data.cnpj || formatCNPJ(raw));
+    toast('✓ Consulta realizada com sucesso', 'green');
+
+  } catch (err) {
+    console.error('[BuscaCNPJ] Erro na consulta:', err);
+    showError(
+      'Falha na conexão com a API',
+      'Não foi possível conectar à API da Receita Federal. Verifique sua conexão e tente novamente.'
+    );
+    await salvarStatusBusca('Erro');
+  }
+}
+
+function showError(title, desc) {
+  $('error-title').textContent = title;
+  $('error-desc').textContent  = desc;
+  $('error-state').classList.add('visible');
+  showState('error');
+}
+
+/* ─────────────────────────────────────────────
+   CACHE — salvar
+───────────────────────────────────────────── */
+async function salvarCache(cnpjRaw, dados, ts) {
+  if (!STATE.dealId) return;
+  try {
+    const cacheKey = `deal_${STATE.dealId}_last_query`;
+    await b24Call('app.option.set', {
+      options: {
+        [cacheKey]: {
+          cnpj: formatCNPJ(cnpjRaw),
+          dados_completos: dados,
+          timestamp: ts,
+        }
+      }
+    });
+  } catch (e) {
+    console.warn('[BuscaCNPJ] Falha ao salvar cache:', e);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   STATUS DA BUSCA — salvo automaticamente
+───────────────────────────────────────────── */
+async function salvarStatusBusca(status) {
+  // Status salvo independente do botão "Salvar em Empresa"
+  if (!STATE.companyId || !STATE.fieldMapping) return;
+  const m = STATE.fieldMapping['status_busca'];
+  if (!m || !m.field_id) return;
+  try {
+    await b24Call('crm.company.update', {
+      id: STATE.companyId,
+      fields: { [m.field_id]: status }
+    });
+  } catch (e) {
+    console.warn('[BuscaCNPJ] Falha ao salvar status:', e);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   SALVAR EM EMPRESA
+───────────────────────────────────────────── */
+$('btn-salvar').addEventListener('click', () => doSave());
+
+async function doSave() {
+  if (STATE.saving) return;
+  if (!STATE.companyId) {
+    toast('⚠ Vincule uma empresa a este negócio primeiro', 'yellow', 3500);
+    return;
+  }
+  if (!STATE.lastQueryData) return;
+
+  STATE.saving = true;
+  const btn = $('btn-salvar');
+  btn.classList.add('saving');
+  btn.disabled = true;
+
+  try {
+    const payload = buildPayload(STATE.lastQueryData);
+
+    if (Object.keys(payload).length === 0) {
+      toast('Nenhum campo mapeado para salvar', 'yellow', 3000);
+      btn.classList.remove('saving');
+      btn.disabled = false;
+      STATE.saving = false;
+      return;
+    }
+
+    // Máximo 5 chamadas simultâneas — aqui é uma única chamada de update
+    await b24Call('crm.company.update', {
+      id: STATE.companyId,
+      fields: payload,
+    });
+
+    // Sucesso
+    btn.classList.remove('saving');
+    btn.classList.add('saved');
+    btn.disabled = false;
+    $('btn-salvar-label').textContent = `✓ Salvo em ${STATE.companyName || 'Empresa'}`;
+
+    showSaveStatus('ok', `<strong>Dados salvos com sucesso</strong> em <strong>${STATE.companyName || 'Empresa #' + STATE.companyId}</strong> — ${Object.keys(payload).length} campos atualizados.`);
+    toast(`✓ Dados salvos em ${STATE.companyName || 'Empresa'}`, 'green', 3000);
+
+  } catch (err) {
+    console.error('[BuscaCNPJ] Erro ao salvar:', err);
+    btn.classList.remove('saving');
+    btn.disabled = false;
+    showSaveStatus('err', `Falha ao salvar: ${err.message || JSON.stringify(err)}`);
+    toast('✕ Erro ao salvar na empresa', 'red', 3500);
+  } finally {
+    STATE.saving = false;
+  }
+}
+
+function showSaveStatus(type, html) {
+  const el = $('save-status');
+  el.classList.remove('visible', 'ok', 'err');
+  el.classList.add('visible', type);
+  $('save-status-icon').textContent = type === 'ok' ? '✓' : '✕';
+  $('save-status-text').innerHTML   = html;
+}
+
+/* ─────────────────────────────────────────────
+   BOTÕES: Atualizar / Nova Consulta / Dismiss
+───────────────────────────────────────────── */
+$('btn-atualizar').addEventListener('click', () => {
+  // Refaz consulta com o CNPJ em cache
+  const raw = $('cache-cnpj').textContent.replace(/\D/g, '');
+  if (raw.length === 14) {
+    inputEl.value = formatCNPJ(raw);
+    inputEl.classList.add('valid');
+    hideCacheBanner();
+    doSearch(raw);
+  }
+});
+
+$('btn-dismiss-cache').addEventListener('click', () => {
+  hideCacheBanner();
+  inputEl.value = '';
+  inputEl.classList.remove('valid', 'invalid');
+  STATE.lastQueryData = null;
+  showState('empty');
+});
+
+$('btn-nova').addEventListener('click', () => {
+  // Limpa estado visual — NÃO apaga o cache persistido
+  inputEl.value = '';
+  inputEl.classList.remove('valid', 'invalid');
+  STATE.lastQueryData = null;
+  showState('empty');
+  $('error-state').classList.remove('visible');
+  // Cache banner permanece (o cache ainda existe no app.option)
+});
+</script>
+</body>
+</html>

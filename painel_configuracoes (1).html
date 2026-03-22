@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Busca CNPJ — Painel de Configurações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<style>
+  :root {
+    --libe-green:  #0bbf7e;
+    --libe-dark:   #0c021c;
+    --libe-blue:   #59abed;
+    --libe-yellow: #ffb317;
+    --libe-card:   #140a28;
+    --libe-card2:  #1a0f33;
+    --libe-text:   #f0eaf8;
+    --libe-muted:  rgba(240,234,248,0.55);
+    --border-std:  rgba(11,191,126,0.18);
+    --border-str:  rgba(11,191,126,0.4);
+    --green-glow:  rgba(11,191,126,0.12);
+    --yellow-glow: rgba(255,179,23,0.15);
+    --red-color:   #ff5c6a;
+    --red-glow:    rgba(255,92,106,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; min-height: 100vh;
+    background: var(--libe-dark);
+    font-family: 'Poppins', sans-serif;
+    color: var(--libe-text);
+    font-size: 14px;
+  }
+
+  /* ── Layout ─────────────────────────────────────────── */
+  .app-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+  }
+
+  /* ── Header ──────────────────────────────────────────── */
+  .app-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .app-header-left .app-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--libe-text);
+    line-height: 1.2;
+  }
+  .app-header-left .app-subtitle {
+    font-size: 12px;
+    color: var(--libe-muted);
+    margin-top: 3px;
+  }
+  .app-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--libe-muted);
+    font-weight: 500;
+  }
+  .app-logo .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--libe-green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--libe-green);
+  }
+
+  /* ── Status bar das abas ─────────────────────────────── */
+  .placement-bar {
+    background: var(--libe-card);
+    border: 1px solid var(--border-std);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .placement-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .placement-bar-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--libe-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .placement-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .placement-item-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--libe-text);
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+  .badge::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .badge-green {
+    background: rgba(11,191,126,0.14);
+    color: var(--libe-green);
+    border: 1px solid rgba(11,191,126,0.3);
+  }
+  .badge-red {
+    background: var(--red-glow);
+    color: var(--red-color);
+    border: 1px solid rgba(255,92,106,0.3);
+  }
+  .badge-loading {
+    background: rgba(89,171,237,0.12);
+    color: var(--libe-blue);
+    border: 1px solid rgba(89,171,237,0.3);
+  }
+
+  /* ── Botões ──────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s;
+    outline: none;
+    line-height: 1;
+  }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--libe-green);
+    color: #0c021c;
+  }
+  .btn-primary:not(:disabled):hover {
+    background: #0ad98e;
+    box-shadow: 0 0 18px rgba(11,191,126,0.45);
+    transform: translateY(-1px);
+  }
+  .btn-primary:not(:disabled):active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--libe-text);
+    border: 1px solid var(--border-str);
+  }
+  .btn-secondary:not(:disabled):hover {
+    background: var(--green-glow);
+    border-color: var(--libe-green);
+    color: var(--libe-green);
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--red-color);
+    border: 1px solid rgba(255,92,106,0.4);
+  }
+  .btn-danger:not(:disabled):hover {
+    background: var(--red-glow);
+  }
+
+  .btn-icon {
+    width: 28px; height: 28px;
+    padding: 0;
+    border-radius: 6px;
+    background: var(--green-glow);
+    color: var(--libe-green);
+    border: 1px solid var(--border-str);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .btn-icon:not(:disabled):hover {
+    background: var(--libe-green);
+    color: #0c021c;
+    box-shadow: 0 0 10px rgba(11,191,126,0.4);
+  }
+
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* ── Toolbar ──────────────────────────────────────────── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .search-input-wrap {
+    position: relative;
+  }
+  .search-input-wrap svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px;
+    fill: var(--libe-muted);
+    pointer-events: none;
+  }
+  .search-input {
+    background: var(--libe-card);
+    border: 1px solid var(--border-std);
+    border-radius: 8px;
+    color: var(--libe-text);
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    padding: 7px 12px 7px 32px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--border-str); }
+  .search-input::placeholder { color: var(--libe-muted); }
+
+  .filter-select {
+    background: var(--libe-card);
+    border: 1px solid var(--border-std);
+    border-radius: 8px;
+    color: var(--libe-text);
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    padding: 7px 10px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .filter-select:focus { border-color: var(--border-str); }
+
+  .save-counter {
+    font-size: 12px;
+    color: var(--libe-muted);
+    padding: 6px 10px;
+    background: var(--libe-card2);
+    border-radius: 6px;
+    border: 1px solid var(--border-std);
+  }
+  .save-counter span { color: var(--libe-green); font-weight: 600; }
+
+  /* ── Section header ───────────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-std);
+  }
+  .section-header-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--libe-muted);
+  }
+  .section-header-count {
+    font-size: 11px;
+    background: var(--green-glow);
+    color: var(--libe-green);
+    border: 1px solid var(--border-std);
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  /* ── Campo mapping card ───────────────────────────────── */
+  .mapping-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .mapping-card {
+    background: var(--libe-card);
+    border: 1px solid var(--border-std);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.18s, background 0.18s;
+  }
+  .mapping-card:hover {
+    border-color: var(--border-str);
+    background: var(--libe-card2);
+  }
+  .mapping-card.is-mapped {
+    border-color: rgba(11,191,126,0.25);
+  }
+  .mapping-card-info {
+    flex: 0 0 auto;
+    min-width: 130px;
+    max-width: 150px;
+  }
+  .mapping-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--libe-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mapping-origin-tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    background: rgba(89,171,237,0.12);
+    color: var(--libe-blue);
+    border: 1px solid rgba(89,171,237,0.25);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-top: 3px;
+  }
+  .mapping-type-tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    background: rgba(255,179,23,0.1);
+    color: var(--libe-yellow);
+    border: 1px solid rgba(255,179,23,0.2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-top: 3px;
+    margin-left: 4px;
+  }
+  .mapping-json-key {
+    font-size: 10px;
+    color: var(--libe-muted);
+    font-family: 'Courier New', monospace;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mapping-select-wrap {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+  }
+  .mapping-select {
+    width: 100%;
+    background: #0f0621;
+    border: 1px solid var(--border-std);
+    border-radius: 7px;
+    color: var(--libe-text);
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    padding: 6px 10px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%230bbf7e'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    transition: border-color 0.15s;
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+  .mapping-select:focus { border-color: var(--border-str); }
+  .mapping-select.has-value { border-color: rgba(11,191,126,0.3); color: var(--libe-text); }
+  .mapping-select.no-save { color: var(--libe-muted); }
+
+  /* ── Tooltip container ────────────────────────────────── */
+  .tooltip-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .tooltip-box {
+    display: none;
+    position: absolute;
+    right: 36px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--libe-card2);
+    border: 1px solid var(--border-str);
+    border-radius: 9px;
+    padding: 10px 12px;
+    width: 220px;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .tooltip-box::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left: 6px solid var(--border-str);
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+  }
+  .tooltip-box.open { display: block; }
+  .tooltip-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--libe-text);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .tooltip-title em {
+    font-style: normal;
+    color: var(--libe-green);
+  }
+  .tooltip-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  /* ── Loading overlay ──────────────────────────────────── */
+  #loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--libe-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 999;
+    transition: opacity 0.3s;
+  }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(11,191,126,0.2);
+    border-top-color: var(--libe-green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-size: 14px;
+    color: var(--libe-muted);
+    font-weight: 500;
+  }
+
+  /* ── Toast ────────────────────────────────────────────── */
+  #toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 9999;
+  }
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 240px;
+    max-width: 360px;
+    animation: slideInRight 0.25s ease;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .toast-success {
+    background: #0f2b1e;
+    border: 1px solid rgba(11,191,126,0.4);
+    color: var(--libe-text);
+  }
+  .toast-success .toast-icon { color: var(--libe-green); font-size: 16px; }
+  .toast-error {
+    background: #2b0f13;
+    border: 1px solid rgba(255,92,106,0.4);
+    color: var(--libe-text);
+  }
+  .toast-error .toast-icon { color: var(--red-color); font-size: 16px; }
+  .toast-info {
+    background: var(--libe-card2);
+    border: 1px solid rgba(89,171,237,0.3);
+    color: var(--libe-text);
+  }
+  .toast-info .toast-icon { color: var(--libe-blue); font-size: 16px; }
+  .toast-warn {
+    background: #2b200f;
+    border: 1px solid rgba(255,179,23,0.35);
+    color: var(--libe-text);
+  }
+  .toast-warn .toast-icon { color: var(--libe-yellow); font-size: 16px; }
+
+  /* ── Repair progress ──────────────────────────────────── */
+  #repair-progress {
+    display: none;
+    background: var(--libe-card);
+    border: 1px solid var(--border-str);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+  }
+  #repair-progress.visible { display: block; }
+  .repair-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--libe-text);
+    margin-bottom: 10px;
+  }
+  .repair-progress-bar-bg {
+    background: rgba(11,191,126,0.1);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .repair-progress-bar {
+    height: 100%;
+    background: var(--libe-green);
+    border-radius: 4px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+  .repair-log {
+    max-height: 80px;
+    overflow-y: auto;
+    font-size: 11px;
+    color: var(--libe-muted);
+    font-family: 'Courier New', monospace;
+    line-height: 1.6;
+  }
+  .repair-log-ok  { color: var(--libe-green); }
+  .repair-log-err { color: var(--red-color); }
+  .repair-log-warn { color: var(--libe-yellow); }
+
+  /* ── No-results ───────────────────────────────────────── */
+  .no-results {
+    text-align: center;
+    padding: 40px;
+    color: var(--libe-muted);
+    font-size: 13px;
+  }
+
+  /* ── Sticky save bar ──────────────────────────────────── */
+  .sticky-save {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(to top, var(--libe-dark) 80%, transparent);
+    padding: 16px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    z-index: 50;
+    pointer-events: none;
+  }
+  .sticky-save > * { pointer-events: auto; }
+  .unsaved-indicator {
+    font-size: 12px;
+    color: var(--libe-yellow);
+    display: none;
+    align-items: center;
+    gap: 5px;
+  }
+  .unsaved-indicator.visible { display: flex; }
+  .unsaved-dot {
+    width: 6px; height: 6px;
+    background: var(--libe-yellow);
+    border-radius: 50%;
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── Scrollbar ────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(11,191,126,0.25); border-radius: 4px; }
+
+  /* ── Divider ──────────────────────────────────────────── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border-std);
+    margin: 20px 0;
+  }
+
+  /* ── Inline spinner ───────────────────────────────────── */
+  .spinner-inline {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(11,191,126,0.2);
+    border-top-color: var(--libe-green);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Carregando configurações…</div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- App Wrapper -->
+<div class="app-wrapper" id="app-content" style="display:none">
+
+  <!-- Header -->
+  <div class="app-header">
+    <div class="app-header-left">
+      <div class="app-title">⚙️ Painel de Configurações</div>
+      <div class="app-subtitle">Mapeie os dados da Receita Federal para os campos da Empresa no CRM</div>
+    </div>
+    <div class="app-logo">
+      <div class="logo-dot"></div>
+      App Busca CNPJ
+    </div>
+  </div>
+
+  <!-- Placement Status Bar -->
+  <div class="placement-bar">
+    <div class="placement-bar-left">
+      <div class="placement-bar-label">Status das Abas</div>
+      <div class="placement-item">
+        <div class="placement-item-name">Negócio (Deal)</div>
+        <span class="badge badge-loading" id="badge-deal">Verificando…</span>
+      </div>
+      <div class="placement-item">
+        <div class="placement-item-name">Empresa (Company)</div>
+        <span class="badge badge-loading" id="badge-company">Verificando…</span>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-sm" id="btn-repair" onclick="repararInstalacao()">
+      🔧 Reparar Instalação
+    </button>
+  </div>
+
+  <!-- Repair Progress -->
+  <div id="repair-progress">
+    <div class="repair-title">🔧 Reparando instalação…</div>
+    <div class="repair-progress-bar-bg">
+      <div class="repair-progress-bar" id="repair-bar"></div>
+    </div>
+    <div class="repair-log" id="repair-log"></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
+        <input class="search-input" type="text" id="search-campos" placeholder="Buscar campo…" oninput="filtrarCards()">
+      </div>
+      <select class="filter-select" id="filter-status" onchange="filtrarCards()">
+        <option value="all">Todos os campos</option>
+        <option value="mapped">Apenas mapeados</option>
+        <option value="unmapped">Não mapeados</option>
+      </select>
+    </div>
+    <div class="save-counter" id="save-counter">
+      <span id="counter-mapped">0</span> de 24 campos mapeados
+    </div>
+  </div>
+
+  <!-- Mapping Cards Container -->
+  <div id="mapping-sections"></div>
+
+  <!-- No results -->
+  <div class="no-results" id="no-results" style="display:none">
+    Nenhum campo encontrado para este filtro.
+  </div>
+
+  <!-- Sticky Save Bar -->
+  <div class="sticky-save">
+    <div class="unsaved-indicator" id="unsaved-indicator">
+      <div class="unsaved-dot"></div>
+      Alterações não salvas
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="restaurarMapeamento()">Restaurar padrão</button>
+    <button class="btn btn-primary" id="btn-salvar" onclick="salvarConfiguracoes()">
+      💾 Salvar Alterações
+    </button>
+  </div>
+
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────
+// CONSTANTES E DADOS
+// ──────────────────────────────────────────────────────────
+
+const CAMPOS_RECEITA = [
+  // Identificação
+  { group: 'Identificação', key: 'razao_social',              label: 'Razão Social',           json: 'razao_social',              tipo: 'string', fieldCode: null,       nativo: true },
+  { group: 'Identificação', key: 'cnpj',                      label: 'CNPJ',                   json: 'cnpj',                      tipo: 'string', fieldCode: 'CNPJ_NUM', nativo: false },
+  { group: 'Identificação', key: 'nome_fantasia',              label: 'Nome Fantasia',          json: 'nome_fantasia',             tipo: 'string', fieldCode: 'CNPJ_FAN', nativo: false },
+  { group: 'Identificação', key: 'situacao_cadastral',         label: 'Situação Cadastral',     json: 'situacao_cadastral',        tipo: 'string', fieldCode: 'CNPJ_SIT', nativo: false },
+  { group: 'Identificação', key: 'data_situacao_cadastral',    label: 'Data da Situação',       json: 'data_situacao_cadastral',   tipo: 'date',   fieldCode: 'CNPJ_DST', nativo: false },
+  { group: 'Identificação', key: 'capital_social',             label: 'Capital Social',         json: 'capital_social',            tipo: 'double', fieldCode: 'CNPJ_CAP', nativo: false },
+  { group: 'Identificação', key: 'porte_empresa',              label: 'Porte da Empresa',       json: 'porte_empresa',             tipo: 'string', fieldCode: 'CNPJ_POR', nativo: false },
+  { group: 'Identificação', key: 'natureza_juridica',          label: 'Natureza Jurídica',      json: 'natureza_juridica',         tipo: 'string', fieldCode: 'CNPJ_NAT', nativo: false },
+  { group: 'Identificação', key: 'data_inicio_atividade',      label: 'Data de Abertura',       json: 'data_inicio_atividade',     tipo: 'date',   fieldCode: 'CNPJ_DAB', nativo: false },
+  { group: 'Identificação', key: 'matriz_filial',              label: 'Matriz / Filial',        json: 'matriz_filial',             tipo: 'string', fieldCode: 'CNPJ_MTZ', nativo: false },
+  // Regime
+  { group: 'Regime Fiscal', key: 'opcao_simples',              label: 'Simples Nacional',       json: 'opcao_simples',             tipo: 'string', fieldCode: 'CNPJ_SMP', nativo: false, noSaveDefault: true },
+  { group: 'Regime Fiscal', key: 'opcao_mei',                  label: 'MEI',                    json: 'opcao_mei',                 tipo: 'string', fieldCode: 'CNPJ_MEI', nativo: false },
+  { group: 'Regime Fiscal', key: 'cnae_principal',             label: 'Código CNAE',            json: 'cnae_principal',            tipo: 'string', fieldCode: 'CNPJ_NAE', nativo: false },
+  // Endereço
+  { group: 'Endereço',      key: 'logradouro',                 label: 'Logradouro',             json: 'logradouro',                tipo: 'string', fieldCode: 'CNPJ_LOG', nativo: false },
+  { group: 'Endereço',      key: 'numero',                     label: 'Número',                 json: 'numero',                    tipo: 'string', fieldCode: 'CNPJ_NRO', nativo: false },
+  { group: 'Endereço',      key: 'complemento',                label: 'Complemento',            json: 'complemento',               tipo: 'string', fieldCode: 'CNPJ_CMP', nativo: false, noSaveDefault: true },
+  { group: 'Endereço',      key: 'bairro',                     label: 'Bairro',                 json: 'bairro',                    tipo: 'string', fieldCode: 'CNPJ_BAI', nativo: false },
+  { group: 'Endereço',      key: 'cep',                        label: 'CEP',                    json: 'cep',                       tipo: 'string', fieldCode: 'CNPJ_CEP', nativo: false },
+  { group: 'Endereço',      key: 'municipio',                  label: 'Município',              json: 'municipio',                 tipo: 'string', fieldCode: 'CNPJ_CID', nativo: false },
+  { group: 'Endereço',      key: 'uf',                         label: 'Estado (UF)',            json: 'uf',                        tipo: 'string', fieldCode: 'CNPJ_UF',  nativo: false },
+  // Contato
+  { group: 'Contato',       key: 'telefone',                   label: 'Telefone',               json: 'telefones[0]',              tipo: 'string', fieldCode: 'CNPJ_TEL', nativo: false },
+  { group: 'Contato',       key: 'email',                      label: 'E-mail',                 json: 'email',                     tipo: 'string', fieldCode: 'CNPJ_EML', nativo: false, noSaveDefault: true },
+  // Societário
+  { group: 'Societário',    key: 'qsa',                        label: 'Quadro Societário',      json: 'QSA[]',                     tipo: 'string', fieldCode: 'CNPJ_QSA', nativo: false },
+  // App
+  { group: 'App',           key: 'status_busca',               label: 'Status da Busca',        json: '(gerado pelo app)',         tipo: 'string', fieldCode: 'CNPJ_STS', nativo: false },
+];
+
+const TIPO_LABELS = { string: 'texto', date: 'data', double: 'número' };
+
+// Estado global
+let state = {
+  suffix: null,
+  fieldMapping: {},
+  defaultMapping: {},
+  companyFields: [],    // campos nativos
+  userFields: [],       // campos UF_CRM_
+  hintPending: {},
+  failedFields: [],
+  hasChanges: false,
+};
+
+// Tooltip aberto
+let openTooltip = null;
+
+// ──────────────────────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  BX24.init(async () => {
+    try {
+      await inicializar();
+    } catch (e) {
+      console.error('[PainelConfig] Erro fatal na inicialização:', e);
+      showLoading(false);
+      showToast('Erro ao inicializar painel: ' + e.message, 'error');
+    }
+  });
+});
+
+async function inicializar() {
+  showLoading(true, 'Carregando configurações…');
+
+  // Chamadas paralelas de inicialização
+  const [optRes, fieldsRes, ufRes, placDealRes, placCompRes] = await Promise.all([
+    callBX24('app.option.get', { options: ['app_install_suffix', 'field_mapping', 'hint_pending', 'failed_fields'] }),
+    callBX24('crm.company.fields', {}),
+    callBX24('crm.company.userfield.list', { filter: { ENTITY_ID: 'CRM_COMPANY' } }),
+    callBX24('placement.get', { PLACEMENT: 'CRM_DEAL_DETAIL_TAB' }),
+    callBX24('placement.get', { PLACEMENT: 'CRM_COMPANY_DETAIL_TAB' }),
+  ]);
+
+  // Sufixo
+  state.suffix = optRes.result?.app_install_suffix || null;
+
+  // Campos nativos
+  const compFields = fieldsRes.result || {};
+  state.companyFields = Object.entries(compFields)
+    .filter(([k]) => !k.startsWith('UF_CRM_'))
+    .map(([k, v]) => ({ id: k, label: v.formLabel || v.listLabel || k }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  // Campos UF_CRM_
+  const ufList = ufRes.result || [];
+  state.userFields = ufList
+    .filter(f => f.ENTITY_ID === 'CRM_COMPANY')
+    .map(f => ({ id: f.FIELD_NAME, label: f.EDIT_FORM_LABEL || f.FIELD_NAME }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  // hint_pending e failed_fields
+  state.hintPending = optRes.result?.hint_pending || {};
+  state.failedFields = optRes.result?.failed_fields || [];
+
+  // Mapeamento salvo
+  const savedMapping = optRes.result?.field_mapping || {};
+  if (Object.keys(savedMapping).length > 0) {
+    state.fieldMapping = savedMapping;
+  } else {
+    // Construir mapeamento padrão baseado no sufixo
+    construirMapeamentoPadrao();
+  }
+
+  // Status das abas
+  atualizarBadgePlacement('deal', placDealRes.result);
+  atualizarBadgePlacement('company', placCompRes.result);
+
+  // Renderizar
+  renderizarCards();
+  atualizarContador();
+
+  showLoading(false);
+  document.getElementById('app-content').style.display = '';
+}
+
+// ──────────────────────────────────────────────────────────
+// MAPEAMENTO PADRÃO
+// ──────────────────────────────────────────────────────────
+function construirMapeamentoPadrao() {
+  const s = state.suffix || '00';
+  const mapping = {};
+
+  for (const campo of CAMPOS_RECEITA) {
+    if (campo.noSaveDefault) {
+      mapping[campo.key] = { entity: 'company', field_id: null };
+      continue;
+    }
+    if (campo.nativo) {
+      mapping[campo.key] = { entity: 'company', field_id: 'TITLE' };
+      continue;
+    }
+    if (campo.fieldCode) {
+      const ufName = `UF_CRM_${campo.fieldCode}_${s}`;
+      // Verificar se o campo existe
+      const exists = state.userFields.find(f => f.id === ufName);
+      mapping[campo.key] = { entity: 'company', field_id: exists ? ufName : null };
+    } else {
+      mapping[campo.key] = { entity: 'company', field_id: null };
+    }
+  }
+  state.fieldMapping = mapping;
+  state.defaultMapping = JSON.parse(JSON.stringify(mapping));
+}
+
+// ──────────────────────────────────────────────────────────
+// RENDER CARDS
+// ──────────────────────────────────────────────────────────
+function renderizarCards() {
+  const container = document.getElementById('mapping-sections');
+  container.innerHTML = '';
+
+  const groups = {};
+  for (const campo of CAMPOS_RECEITA) {
+    if (!groups[campo.group]) groups[campo.group] = [];
+    groups[campo.group].push(campo);
+  }
+
+  for (const [groupName, campos] of Object.entries(groups)) {
+    const section = document.createElement('div');
+    section.dataset.group = groupName;
+
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    header.innerHTML = `
+      <span class="section-header-title">${groupName}</span>
+      <span class="section-header-count">${campos.length}</span>
+    `;
+    section.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'mapping-grid';
+    grid.dataset.group = groupName;
+
+    for (const campo of campos) {
+      grid.appendChild(criarCard(campo));
+    }
+    section.appendChild(grid);
+    container.appendChild(section);
+  }
+}
+
+function criarCard(campo) {
+  const card = document.createElement('div');
+  card.className = 'mapping-card';
+  card.dataset.key = campo.key;
+  card.dataset.label = campo.label.toLowerCase();
+  card.dataset.group = campo.group.toLowerCase();
+
+  const currentFieldId = state.fieldMapping[campo.key]?.field_id || null;
+  if (currentFieldId) card.classList.add('is-mapped');
+
+  // Info
+  const info = document.createElement('div');
+  info.className = 'mapping-card-info';
+  info.innerHTML = `
+    <div class="mapping-label" title="${campo.label}">${campo.label}</div>
+    <span class="mapping-origin-tag">RECEITA</span>
+    <span class="mapping-type-tag">${TIPO_LABELS[campo.tipo] || campo.tipo}</span>
+    <div class="mapping-json-key">${campo.json}</div>
+  `;
+  card.appendChild(info);
+
+  // Select
+  const selectWrap = document.createElement('div');
+  selectWrap.className = 'mapping-select-wrap';
+  const select = document.createElement('select');
+  select.className = 'mapping-select';
+  select.dataset.key = campo.key;
+  popularDropdown(select, campo, currentFieldId);
+  select.addEventListener('change', () => onMappingChange(campo.key, select.value, card, select));
+  selectWrap.appendChild(select);
+  card.appendChild(selectWrap);
+
+  // Botão +
+  if (!campo.nativo) {
+    const tooltipWrap = document.createElement('div');
+    tooltipWrap.className = 'tooltip-wrap';
+
+    const btnPlus = document.createElement('button');
+    btnPlus.className = 'btn btn-icon';
+    btnPlus.title = 'Criar campo no Bitrix24';
+    btnPlus.textContent = '+';
+    btnPlus.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleTooltip(campo, tooltipWrap, select);
+    });
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip-box';
+    tooltip.id = `tooltip-${campo.key}`;
+    tooltip.innerHTML = `
+      <div class="tooltip-title">Criar campo <em>"${campo.label} - App Busca CNPJ"</em> em Empresa no Bitrix24?</div>
+      <div class="tooltip-actions">
+        <button class="btn btn-primary btn-sm" onclick="criarCampo('${campo.key}', this)">Criar</button>
+        <button class="btn btn-secondary btn-sm" onclick="fecharTooltip()">Cancelar</button>
+      </div>
+    `;
+
+    tooltipWrap.appendChild(btnPlus);
+    tooltipWrap.appendChild(tooltip);
+    card.appendChild(tooltipWrap);
+  }
+
+  return card;
+}
+
+function popularDropdown(select, campo, currentFieldId) {
+  select.innerHTML = '';
+
+  // Opção "— Não Salvar —"
+  const optNone = document.createElement('option');
+  optNone.value = '';
+  optNone.textContent = '— Não Salvar —';
+  select.appendChild(optNone);
+
+  // Campos nativos (apenas para campos não-nativo pode ser mapeado livremente)
+  if (state.companyFields.length > 0) {
+    const grpNativo = document.createElement('optgroup');
+    grpNativo.label = '── Campos Nativos';
+    for (const f of state.companyFields) {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.label + ' [' + f.id + ']';
+      grpNativo.appendChild(opt);
+    }
+    select.appendChild(grpNativo);
+  }
+
+  // Campos UF_CRM_
+  if (state.userFields.length > 0) {
+    const grpUF = document.createElement('optgroup');
+    grpUF.label = '── Campos Personalizados (App)';
+    for (const f of state.userFields) {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.label + ' [' + f.id + ']';
+      grpUF.appendChild(opt);
+    }
+    select.appendChild(grpUF);
+  }
+
+  // Selecionar valor atual
+  select.value = currentFieldId || '';
+  atualizarEstiloSelect(select);
+}
+
+function atualizarEstiloSelect(select) {
+  if (select.value) {
+    select.classList.add('has-value');
+    select.classList.remove('no-save');
+  } else {
+    select.classList.remove('has-value');
+    select.classList.add('no-save');
+  }
+}
+
+function onMappingChange(key, value, card, select) {
+  state.fieldMapping[key] = { entity: 'company', field_id: value || null };
+  if (value) {
+    card.classList.add('is-mapped');
+  } else {
+    card.classList.remove('is-mapped');
+  }
+  atualizarEstiloSelect(select);
+  marcarAlterado();
+  atualizarContador();
+}
+
+// ──────────────────────────────────────────────────────────
+// TOOLTIP / CRIAR CAMPO
+// ──────────────────────────────────────────────────────────
+function toggleTooltip(campo, tooltipWrap, select) {
+  const tooltip = tooltipWrap.querySelector('.tooltip-box');
+  const isOpen = tooltip.classList.contains('open');
+  fecharTooltip();
+  if (!isOpen) {
+    tooltip.classList.add('open');
+    openTooltip = { tooltip, campo, select };
+    // Fechar ao clicar fora
+    setTimeout(() => {
+      document.addEventListener('click', fecharTooltipOutside, { once: true });
+    }, 10);
+  }
+}
+
+function fecharTooltipOutside(e) {
+  if (openTooltip && !openTooltip.tooltip.contains(e.target)) {
+    fecharTooltip();
+  }
+}
+
+function fecharTooltip() {
+  if (openTooltip) {
+    openTooltip.tooltip.classList.remove('open');
+    openTooltip = null;
+  }
+}
+
+async function criarCampo(key, btnEl) {
+  if (!openTooltip) return;
+  const { campo, select, tooltip } = openTooltip;
+  const s = state.suffix || '00';
+
+  btnEl.disabled = true;
+  btnEl.innerHTML = '<span class="spinner-inline"></span>';
+
+  const fieldName = `${campo.fieldCode}_${s}`;
+  const labelCampo = `${campo.label} - App Busca CNPJ`;
+
+  try {
+    // Chamada 1: criar campo
+    const addRes = await callBX24('crm.company.userfield.add', {
+      fields: {
+        ENTITY_ID: 'CRM_COMPANY',
+        FIELD_NAME: fieldName,
+        USER_TYPE_ID: 'string',
+        EDIT_FORM_LABEL: labelCampo,
+        LIST_COLUMN_LABEL: labelCampo,
+        SHOW_IN_LIST: 'Y',
+        SHOW_ALWAYS: 'Y',
+        SETTINGS: { SHOW_FIELD_HINT: 'Y' },
+      }
+    });
+
+    if (addRes.error) throw new Error(addRes.error_description || addRes.error);
+
+    const fieldId = addRes.result;
+    const ufName = `UF_CRM_${fieldName}`;
+
+    // Chamada 2: atualizar HINT (silenciosa em caso de falha)
+    try {
+      await callBX24('crm.company.userfield.update', {
+        id: fieldId,
+        fields: { SETTINGS: { SHOW_FIELD_HINT: 'Y' }, HINT: ufName }
+      });
+    } catch (hintErr) {
+      // Degradação silenciosa
+      state.hintPending[key] = { fieldId, ufName };
+      await callBX24('app.option.set', { options: { hint_pending: state.hintPending } });
+    }
+
+    // Adicionar ao estado local
+    const newField = { id: ufName, label: labelCampo };
+    state.userFields.push(newField);
+    state.userFields.sort((a, b) => a.label.localeCompare(b.label));
+
+    // Atualizar todos os dropdowns deste grupo com o novo campo
+    atualizarTodosDropdowns();
+
+    // Selecionar o campo criado no select atual
+    select.value = ufName;
+    atualizarEstiloSelect(select);
+
+    // Atualizar mapeamento
+    const card = select.closest('.mapping-card');
+    if (card) card.classList.add('is-mapped');
+    onMappingChange(key, ufName, card, select);
+
+    fecharTooltip();
+    showToast(`Campo "${labelCampo}" criado com sucesso!`, 'success');
+
+  } catch (err) {
+    console.error('[criarCampo]', err);
+    btnEl.disabled = false;
+    btnEl.textContent = 'Criar';
+
+    // Verificar se campo já existe
+    if (err.message && (err.message.includes('ALREADY_EXISTS') || err.message.includes('already exists'))) {
+      showToast('Campo já existe no Bitrix24.', 'warn');
+      fecharTooltip();
+    } else {
+      showToast('Erro ao criar campo: ' + err.message, 'error');
+    }
+  }
+}
+
+function atualizarTodosDropdowns() {
+  document.querySelectorAll('.mapping-select').forEach(select => {
+    const key = select.dataset.key;
+    const campo = CAMPOS_RECEITA.find(c => c.key === key);
+    if (!campo) return;
+    const currentVal = select.value;
+    popularDropdown(select, campo, currentVal);
+  });
+}
+
+// ──────────────────────────────────────────────────────────
+// SALVAR CONFIGURAÇÕES
+// ──────────────────────────────────────────────────────────
+async function salvarConfiguracoes() {
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-inline"></span> Salvando…';
+
+  try {
+    await callBX24('app.option.set', {
+      options: { field_mapping: state.fieldMapping }
+    });
+    state.hasChanges = false;
+    document.getElementById('unsaved-indicator').classList.remove('visible');
+    showToast('Configurações salvas com sucesso!', 'success');
+  } catch (err) {
+    console.error('[salvarConfiguracoes]', err);
+    showToast('Erro ao salvar: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '💾 Salvar Alterações';
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// REPARAR INSTALAÇÃO
+// ──────────────────────────────────────────────────────────
+async function repararInstalacao() {
+  const progress = document.getElementById('repair-progress');
+  const bar = document.getElementById('repair-bar');
+  const log = document.getElementById('repair-log');
+  const btnRepair = document.getElementById('btn-repair');
+
+  progress.classList.add('visible');
+  btnRepair.disabled = true;
+  log.innerHTML = '';
+  bar.style.width = '0%';
+
+  const tasks = [];
+
+  // Reparar placement Deal
+  tasks.push({ label: 'Registrar aba em Negócio (Deal)', fn: () => repararPlacement('CRM_DEAL_DETAIL_TAB', 'deal') });
+  // Reparar placement Company
+  tasks.push({ label: 'Registrar aba em Empresa (Company)', fn: () => repararPlacement('CRM_COMPANY_DETAIL_TAB', 'company') });
+
+  // Reparar HINTs pendentes
+  for (const [key, pending] of Object.entries(state.hintPending)) {
+    const campo = CAMPOS_RECEITA.find(c => c.key === key);
+    if (!campo) continue;
+    tasks.push({
+      label: `Atualizar HINT: ${campo.label}`,
+      fn: async () => {
+        await callBX24('crm.company.userfield.update', {
+          id: pending.fieldId,
+          fields: { HINT: pending.ufName }
+        });
+        delete state.hintPending[key];
+      }
+    });
+  }
+
+  if (tasks.length === 0) {
+    adicionarLog(log, 'Nenhuma pendência encontrada. Instalação íntegra! ✓', 'ok');
+    bar.style.width = '100%';
+    btnRepair.disabled = false;
+    atualizarBadgesPlacement();
+    return;
+  }
+
+  let done = 0;
+  for (const task of tasks) {
+    adicionarLog(log, `↳ ${task.label}…`, '');
+    try {
+      await task.fn();
+      adicionarLog(log, `  ✓ Concluído`, 'ok');
+    } catch (err) {
+      adicionarLog(log, `  ✗ Falhou: ${err.message || err}`, 'err');
+    }
+    done++;
+    bar.style.width = Math.round((done / tasks.length) * 100) + '%';
+  }
+
+  // Salvar hint_pending atualizado
+  if (Object.keys(state.hintPending).length < Object.keys(state.hintPending).length) {
+    await callBX24('app.option.set', { options: { hint_pending: state.hintPending } });
+  }
+
+  adicionarLog(log, `Reparo concluído (${done}/${tasks.length} tarefas)`, 'ok');
+  btnRepair.disabled = false;
+  await atualizarBadgesPlacement();
+  showToast('Reparo de instalação concluído!', 'success');
+}
+
+async function repararPlacement(placement, tipo) {
+  await callBX24('placement.bind', {
+    PLACEMENT: placement,
+    HANDLER: window.location.href,
+    TITLE: 'App Busca CNPJ',
+    DESCRIPTION: 'Consulta e salvamento de dados de CNPJ',
+  });
+  // Reler status
+  const res = await callBX24('placement.get', { PLACEMENT: placement });
+  atualizarBadgePlacement(tipo, res.result);
+}
+
+async function atualizarBadgesPlacement() {
+  const [dealRes, compRes] = await Promise.all([
+    callBX24('placement.get', { PLACEMENT: 'CRM_DEAL_DETAIL_TAB' }),
+    callBX24('placement.get', { PLACEMENT: 'CRM_COMPANY_DETAIL_TAB' }),
+  ]);
+  atualizarBadgePlacement('deal', dealRes.result);
+  atualizarBadgePlacement('company', compRes.result);
+}
+
+function adicionarLog(container, text, tipo) {
+  const line = document.createElement('div');
+  if (tipo === 'ok')  line.className = 'repair-log-ok';
+  if (tipo === 'err') line.className = 'repair-log-err';
+  if (tipo === 'warn') line.className = 'repair-log-warn';
+  line.textContent = text;
+  container.appendChild(line);
+  container.scrollTop = container.scrollHeight;
+}
+
+// ──────────────────────────────────────────────────────────
+// STATUS BADGES PLACEMENT
+// ──────────────────────────────────────────────────────────
+function atualizarBadgePlacement(tipo, result) {
+  const badgeId = tipo === 'deal' ? 'badge-deal' : 'badge-company';
+  const badge = document.getElementById(badgeId);
+  if (!badge) return;
+
+  // result é array de placements registrados
+  const ativo = Array.isArray(result) && result.length > 0;
+  badge.className = 'badge ' + (ativo ? 'badge-green' : 'badge-red');
+  badge.textContent = ativo ? 'Ativo' : 'Inativo';
+}
+
+// ──────────────────────────────────────────────────────────
+// FILTROS E BUSCA
+// ──────────────────────────────────────────────────────────
+function filtrarCards() {
+  const query = document.getElementById('search-campos').value.toLowerCase().trim();
+  const status = document.getElementById('filter-status').value;
+
+  let visibleCount = 0;
+  const sections = document.querySelectorAll('#mapping-sections > div');
+
+  sections.forEach(section => {
+    const grid = section.querySelector('.mapping-grid');
+    if (!grid) return;
+    const cards = grid.querySelectorAll('.mapping-card');
+    let sectionVisible = 0;
+
+    cards.forEach(card => {
+      const label = card.dataset.label || '';
+      const key = card.dataset.key;
+      const isMapped = card.classList.contains('is-mapped');
+
+      let show = true;
+      if (query && !label.includes(query)) show = false;
+      if (status === 'mapped' && !isMapped) show = false;
+      if (status === 'unmapped' && isMapped) show = false;
+
+      card.style.display = show ? '' : 'none';
+      if (show) { visibleCount++; sectionVisible++; }
+    });
+
+    section.style.display = sectionVisible > 0 ? '' : 'none';
+  });
+
+  document.getElementById('no-results').style.display = visibleCount === 0 ? '' : 'none';
+}
+
+// ──────────────────────────────────────────────────────────
+// CONTADOR E ESTADO
+// ──────────────────────────────────────────────────────────
+function atualizarContador() {
+  let mapped = 0;
+  for (const v of Object.values(state.fieldMapping)) {
+    if (v?.field_id) mapped++;
+  }
+  document.getElementById('counter-mapped').textContent = mapped;
+}
+
+function marcarAlterado() {
+  state.hasChanges = true;
+  document.getElementById('unsaved-indicator').classList.add('visible');
+}
+
+function restaurarMapeamento() {
+  if (!confirm('Restaurar o mapeamento padrão? As alterações não salvas serão descartadas.')) return;
+  construirMapeamentoPadrao();
+  renderizarCards();
+  atualizarContador();
+  state.hasChanges = false;
+  document.getElementById('unsaved-indicator').classList.remove('visible');
+  showToast('Mapeamento padrão restaurado.', 'info');
+}
+
+// ──────────────────────────────────────────────────────────
+// UTILITÁRIOS BX24
+// ──────────────────────────────────────────────────────────
+function callBX24(method, params) {
+  return new Promise((resolve, reject) => {
+    BX24.callMethod(method, params, (res) => {
+      if (res.error()) {
+        reject(new Error(res.error().error_description || res.error().error || 'Erro desconhecido'));
+      } else {
+        resolve({ result: res.data(), error: null });
+      }
+    });
+  });
+}
+
+// ──────────────────────────────────────────────────────────
+// LOADING
+// ──────────────────────────────────────────────────────────
+function showLoading(show, text) {
+  const overlay = document.getElementById('loading-overlay');
+  if (show) {
+    overlay.classList.remove('hidden');
+    if (text) overlay.querySelector('.loading-text').textContent = text;
+  } else {
+    overlay.classList.add('hidden');
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// TOAST
+// ──────────────────────────────────────────────────────────
+function showToast(msg, type = 'info', duration = 4000) {
+  const container = document.getElementById('toast-container');
+  const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || 'ℹ️'}</span> ${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), duration);
+}
+
+// Fechar tooltip ao pressionar Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') fecharTooltip();
+});
+</script>
+</body>
+</html>

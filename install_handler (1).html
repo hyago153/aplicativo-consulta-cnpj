@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Busca CNPJ — Instalação</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<style>
+  :root {
+    --libe-green: #0bbf7e;
+    --libe-dark: #0c021c;
+    --libe-blue: #59abed;
+    --libe-yellow: #ffb317;
+    --libe-card: #140a28;
+    --libe-card2: #1a0f33;
+    --libe-text: #f0eaf8;
+    --libe-muted: rgba(240,234,248,0.55);
+    --border-soft: rgba(11,191,126,0.18);
+    --border-strong: rgba(11,191,126,0.4);
+    --libe-red: #f0476a;
+    --libe-red-bg: rgba(240,71,106,0.12);
+    --libe-green-bg: rgba(11,191,126,0.1);
+    --libe-yellow-bg: rgba(255,179,23,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--libe-dark);
+    color: var(--libe-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background mesh */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(11,191,126,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 80% 80%, rgba(89,171,237,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  .header-logo {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--libe-green), #07a06a);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(11,191,126,0.3);
+  }
+
+  .header-logo svg { width: 24px; height: 24px; fill: #fff; }
+
+  .header-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--libe-text);
+    line-height: 1.2;
+  }
+
+  .header-text p {
+    font-size: 12px;
+    color: var(--libe-muted);
+    margin-top: 2px;
+  }
+
+  /* ── Screens ── */
+  .screen { display: none; animation: fadeIn 0.35s ease; }
+  .screen.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--libe-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--libe-green);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* ── Error screen ── */
+  .error-box {
+    background: var(--libe-red-bg);
+    border: 1px solid rgba(240,71,106,0.35);
+    border-radius: 14px;
+    padding: 28px;
+    text-align: center;
+  }
+
+  .error-icon {
+    width: 56px; height: 56px;
+    background: rgba(240,71,106,0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  .error-icon svg { width: 28px; height: 28px; fill: var(--libe-red); }
+  .error-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .error-box p { font-size: 13px; color: var(--libe-muted); line-height: 1.6; }
+
+  /* ── Reinstall choice screen ── */
+  .choice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 8px;
+  }
+
+  .choice-btn {
+    background: var(--libe-card2);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 20px 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    color: var(--libe-text);
+  }
+
+  .choice-btn:hover {
+    border-color: var(--border-strong);
+    background: rgba(11,191,126,0.06);
+    transform: translateY(-1px);
+  }
+
+  .choice-btn.primary { border-color: var(--border-strong); }
+  .choice-btn.primary:hover { background: rgba(11,191,126,0.12); }
+
+  .choice-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  .choice-icon.green { background: rgba(11,191,126,0.15); }
+  .choice-icon.yellow { background: rgba(255,179,23,0.15); }
+  .choice-icon svg { width: 18px; height: 18px; }
+  .choice-icon.green svg { fill: var(--libe-green); }
+  .choice-icon.yellow svg { fill: var(--libe-yellow); }
+
+  .choice-btn h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .choice-btn p { font-size: 11px; color: var(--libe-muted); line-height: 1.5; }
+
+  .orphan-list {
+    background: rgba(255,179,23,0.08);
+    border: 1px solid rgba(255,179,23,0.2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: rgba(255,179,23,0.9);
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .orphan-list strong { display: block; margin-bottom: 6px; font-weight: 600; }
+
+  /* ── Progress screen ── */
+  .progress-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .progress-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .progress-header p {
+    font-size: 13px;
+    color: var(--libe-muted);
+  }
+
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+    height: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--libe-green), #07d490);
+    border-radius: 100px;
+    transition: width 0.4s ease;
+    width: 0%;
+    box-shadow: 0 0 10px rgba(11,191,126,0.5);
+  }
+
+  .progress-label {
+    font-size: 11px;
+    color: var(--libe-muted);
+    text-align: right;
+    margin-bottom: 20px;
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--libe-card2);
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+
+  .step-item.running { border-color: rgba(89,171,237,0.3); }
+  .step-item.done { border-color: var(--border-soft); }
+  .step-item.error { border-color: rgba(240,71,106,0.3); }
+  .step-item.warn { border-color: rgba(255,179,23,0.25); }
+
+  .step-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+
+  .step-icon.idle { background: rgba(255,255,255,0.05); }
+  .step-icon.running { background: rgba(89,171,237,0.15); }
+  .step-icon.done { background: rgba(11,191,126,0.15); }
+  .step-icon.error { background: rgba(240,71,106,0.15); }
+  .step-icon.warn { background: rgba(255,179,23,0.15); }
+
+  .step-icon svg { width: 14px; height: 14px; }
+  .step-icon.idle svg { fill: rgba(255,255,255,0.3); }
+  .step-icon.running svg { fill: var(--libe-blue); animation: pulse 1s ease-in-out infinite; }
+  .step-icon.done svg { fill: var(--libe-green); }
+  .step-icon.error svg { fill: var(--libe-red); }
+  .step-icon.warn svg { fill: var(--libe-yellow); }
+
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+  .step-text { flex: 1; }
+  .step-text strong { display: block; font-size: 12px; font-weight: 500; }
+  .step-text span { font-size: 11px; color: var(--libe-muted); }
+
+  .step-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .step-badge.idle { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.3); }
+  .step-badge.running { background: rgba(89,171,237,0.15); color: var(--libe-blue); }
+  .step-badge.done { background: rgba(11,191,126,0.15); color: var(--libe-green); }
+  .step-badge.error { background: rgba(240,71,106,0.12); color: var(--libe-red); }
+  .step-badge.warn { background: rgba(255,179,23,0.12); color: var(--libe-yellow); }
+
+  /* Sub-progress for field creation */
+  .field-progress {
+    margin-top: 16px;
+    padding: 14px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+  }
+
+  .field-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--libe-muted);
+    margin-bottom: 8px;
+  }
+
+  .field-log {
+    max-height: 80px;
+    overflow-y: auto;
+    font-size: 10px;
+    color: rgba(240,234,248,0.4);
+    line-height: 1.8;
+  }
+
+  .field-log .ok { color: rgba(11,191,126,0.7); }
+  .field-log .fail { color: rgba(240,71,106,0.7); }
+  .field-log .warn { color: rgba(255,179,23,0.7); }
+
+  /* ── Conclusion screen ── */
+  .conclusion-hero {
+    text-align: center;
+    padding: 12px 0 24px;
+  }
+
+  .conclusion-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    position: relative;
+  }
+
+  .conclusion-icon.success {
+    background: rgba(11,191,126,0.12);
+    border: 2px solid var(--border-strong);
+    box-shadow: 0 0 32px rgba(11,191,126,0.2);
+  }
+
+  .conclusion-icon.partial {
+    background: rgba(255,179,23,0.1);
+    border: 2px solid rgba(255,179,23,0.35);
+    box-shadow: 0 0 24px rgba(255,179,23,0.15);
+  }
+
+  .conclusion-icon svg { width: 36px; height: 36px; }
+  .conclusion-icon.success svg { fill: var(--libe-green); }
+  .conclusion-icon.partial svg { fill: var(--libe-yellow); }
+
+  .conclusion-hero h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .conclusion-hero p { font-size: 13px; color: var(--libe-muted); line-height: 1.6; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+  }
+
+  .stat-card {
+    background: var(--libe-card2);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+
+  .stat-card .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--libe-green);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-card .stat-value.warn { color: var(--libe-yellow); }
+  .stat-card .stat-label { font-size: 11px; color: var(--libe-muted); }
+
+  .pending-list {
+    background: rgba(255,179,23,0.06);
+    border: 1px solid rgba(255,179,23,0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .pending-list h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--libe-yellow);
+    margin-bottom: 10px;
+  }
+
+  .pending-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(240,234,248,0.7);
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+
+  .pending-item::before {
+    content: '·';
+    color: var(--libe-yellow);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Countdown */
+  .countdown-bar-wrap {
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+    height: 3px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+
+  .countdown-bar {
+    height: 100%;
+    background: var(--libe-green);
+    border-radius: 100px;
+    width: 100%;
+    transition: width 1s linear;
+  }
+
+  .countdown-text {
+    font-size: 11px;
+    color: var(--libe-muted);
+    text-align: center;
+    margin-top: 6px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+
+  .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--libe-green), #07a06a);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(11,191,126,0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(11,191,126,0.4);
+  }
+
+  .btn-secondary {
+    background: var(--libe-card2);
+    color: var(--libe-text);
+    border: 1px solid var(--border-soft);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--border-strong);
+    background: rgba(11,191,126,0.06);
+  }
+
+  .btn-warn {
+    background: rgba(255,179,23,0.12);
+    color: var(--libe-yellow);
+    border: 1px solid rgba(255,179,23,0.3);
+  }
+
+  .btn-warn:hover { background: rgba(255,179,23,0.2); }
+
+  .btn-full { width: 100%; }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .btn-row .btn { flex: 1; }
+
+  /* ── Loading spinner ── */
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(89,171,237,0.3);
+    border-top-color: var(--libe-blue);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
+
+  /* ── Notice ── */
+  .notice {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .notice-icon { flex-shrink: 0; margin-top: 1px; }
+  .notice-icon svg { width: 14px; height: 14px; }
+  .notice.info { background: rgba(89,171,237,0.1); border: 1px solid rgba(89,171,237,0.25); color: rgba(89,171,237,0.9); }
+  .notice.info svg { fill: var(--libe-blue); }
+
+  /* ── Version tag ── */
+  .version-tag {
+    font-size: 10px;
+    color: rgba(240,234,248,0.2);
+    text-align: center;
+    margin-top: 24px;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+    </div>
+    <div class="header-text">
+      <h1>App Busca CNPJ</h1>
+      <p>Instalação &amp; Onboarding · Bitrix24</p>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: loading ==================== -->
+  <div id="screen-loading" class="screen active">
+    <div class="card" style="text-align:center; padding:48px 24px;">
+      <div class="spinner" style="width:28px;height:28px;border-width:3px;margin:0 auto 16px;"></div>
+      <p style="font-size:14px;font-weight:600;">Verificando instalação...</p>
+      <p style="font-size:12px;color:var(--libe-muted);margin-top:6px;" id="loading-msg">Inicializando SDK do Bitrix24</p>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: error-admin ==================== -->
+  <div id="screen-error-admin" class="screen">
+    <div class="error-box">
+      <div class="error-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+      </div>
+      <h2>Acesso Restrito</h2>
+      <p>A instalação do App Busca CNPJ requer permissões de <strong>administrador</strong> do Bitrix24.<br><br>Solicite ao administrador da conta que realize a instalação.</p>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: reinstall-choice ==================== -->
+  <div id="screen-reinstall" class="screen">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        Reinstalação Detectada
+      </div>
+      <p style="font-size:13px;color:var(--libe-muted);margin-bottom:16px;line-height:1.6;">
+        O App Busca CNPJ já foi instalado anteriormente nesta conta.<br>Foram encontrados campos CNPJ existentes:
+      </p>
+      <div class="orphan-list">
+        <strong>Campos detectados:</strong>
+        <div id="orphan-field-list"></div>
+      </div>
+      <p style="font-size:13px;font-weight:500;margin-bottom:14px;">Como deseja prosseguir?</p>
+      <div class="choice-grid">
+        <button class="choice-btn primary" onclick="installChoice('reuse')">
+          <div class="choice-icon green">
+            <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          </div>
+          <h3>Reutilizar Campos</h3>
+          <p>Manter campos existentes e atualizar configurações</p>
+        </button>
+        <button class="choice-btn" onclick="installChoice('recreate')">
+          <div class="choice-icon yellow">
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          </div>
+          <h3>Criar Novos Campos</h3>
+          <p>Gerar novo sufixo e criar campos do zero</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: installing ==================== -->
+  <div id="screen-installing" class="screen">
+    <div class="card">
+      <div class="progress-header">
+        <h2>Instalando App</h2>
+        <p>Aguarde enquanto configuramos tudo para você</p>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="main-progress-bar"></div>
+      </div>
+      <div class="progress-label" id="main-progress-label">0%</div>
+
+      <div class="step-list">
+        <div class="step-item" id="step-admin">
+          <div class="step-icon idle" id="step-admin-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+          </div>
+          <div class="step-text">
+            <strong>Verificando permissões</strong>
+            <span id="step-admin-sub">Confirmando acesso de administrador</span>
+          </div>
+          <span class="step-badge idle" id="step-admin-badge">Aguardando</span>
+        </div>
+
+        <div class="step-item" id="step-suffix">
+          <div class="step-icon idle" id="step-suffix-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+          </div>
+          <div class="step-text">
+            <strong>Gerando sufixo único</strong>
+            <span id="step-suffix-sub">Identificador de instalação</span>
+          </div>
+          <span class="step-badge idle" id="step-suffix-badge">Aguardando</span>
+        </div>
+
+        <div class="step-item" id="step-fields">
+          <div class="step-icon idle" id="step-fields-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 6l-1-2H5v17h2v-7h5l1 2h7V6h-6zm4 8h-4l-1-2H7V6h5l1 2h5v6z"/></svg>
+          </div>
+          <div class="step-text">
+            <strong>Criando campos personalizados</strong>
+            <span id="step-fields-sub">24 campos em CRM_COMPANY</span>
+          </div>
+          <span class="step-badge idle" id="step-fields-badge">Aguardando</span>
+        </div>
+
+        <div id="field-progress-container" style="display:none;">
+          <div class="field-progress">
+            <div class="field-progress-label">
+              <span id="field-progress-text">Criando campos...</span>
+              <span id="field-progress-count">0 / 23</span>
+            </div>
+            <div class="progress-bar-wrap" style="margin-bottom:8px;">
+              <div class="progress-bar-fill" id="field-progress-bar"></div>
+            </div>
+            <div class="field-log" id="field-log"></div>
+          </div>
+        </div>
+
+        <div class="step-item" id="step-mapping">
+          <div class="step-icon idle" id="step-mapping-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h10c2.76 0 5-2.24 5-5s-2.24-5-5-5zm0 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h10c1.65 0 3 1.35 3 3s-1.35-3 3-3z"/></svg>
+          </div>
+          <div class="step-text">
+            <strong>Salvando mapeamento padrão</strong>
+            <span id="step-mapping-sub">Configuração inicial dos campos</span>
+          </div>
+          <span class="step-badge idle" id="step-mapping-badge">Aguardando</span>
+        </div>
+
+        <div class="step-item" id="step-placements">
+          <div class="step-icon idle" id="step-placements-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+          </div>
+          <div class="step-text">
+            <strong>Registrando abas</strong>
+            <span id="step-placements-sub">CRM_DEAL e CRM_COMPANY</span>
+          </div>
+          <span class="step-badge idle" id="step-placements-badge">Aguardando</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: conclusion-success ==================== -->
+  <div id="screen-success" class="screen">
+    <div class="card">
+      <div class="conclusion-hero">
+        <div class="conclusion-icon success">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+        </div>
+        <h2>App instalado com sucesso!</h2>
+        <p>Todos os componentes foram configurados e estão prontos para uso.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-fields">24</div>
+          <div class="stat-label">Campos criados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">2</div>
+          <div class="stat-label">Abas registradas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-suffix" style="font-size:18px;">—</div>
+          <div class="stat-label">Sufixo único</div>
+        </div>
+      </div>
+
+      <div class="notice info">
+        <div class="notice-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div>
+        <span>Utilize o <strong>Painel de Configurações</strong> para ajustar o mapeamento dos campos a qualquer momento.</span>
+      </div>
+
+      <div style="text-align:center;">
+        <button class="btn btn-primary btn-full" id="btn-open-settings" onclick="openSettings()">
+          <svg viewBox="0 0 24 24" style="fill:rgba(255,255,255,0.9)"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.477.477 0 00-.59.22L2.74 8.87a.47.47 0 00.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          Abrir Painel de Configurações
+        </button>
+        <div class="countdown-bar-wrap">
+          <div class="countdown-bar" id="countdown-bar"></div>
+        </div>
+        <p class="countdown-text" id="countdown-text">Redirecionando em 5 segundos...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: conclusion-partial ==================== -->
+  <div id="screen-partial" class="screen">
+    <div class="card">
+      <div class="conclusion-hero">
+        <div class="conclusion-icon partial">
+          <svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+        </div>
+        <h2>Instalação parcial</h2>
+        <p>O app foi instalado com pendências. Veja os detalhes abaixo.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-fields-p">—</div>
+          <div class="stat-label">Campos criados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value warn" id="stat-failed-p">—</div>
+          <div class="stat-label">Com falhas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-suffix-p" style="font-size:18px;">—</div>
+          <div class="stat-label">Sufixo único</div>
+        </div>
+      </div>
+
+      <div class="pending-list" id="pending-list">
+        <h4>⚠ Pendências encontradas</h4>
+        <div id="pending-items"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-warn" onclick="retryInstall()">
+          <svg viewBox="0 0 24 24" style="fill:var(--libe-yellow)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          Reparar Instalação
+        </button>
+        <button class="btn btn-secondary" onclick="openSettings()">
+          Abrir assim mesmo
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div class="version-tag">App Busca CNPJ · v1.0.0 · LibeSales</div>
+
+<script>
+// =====================================================================
+//  APP BUSCA CNPJ — Módulo 1: Instalação & Onboarding
+//  install_handler.html
+// =====================================================================
+
+const FIELD_DEFINITIONS = [
+  // [#, field_name_base, label, USER_TYPE_ID, hint, json_key]
+  { base: 'CNPJ_NUM', label: 'CNPJ',                type: 'string', hint: 'Número do CNPJ formatado (ex: 00.000.000/0001-00)' },
+  { base: 'CNPJ_FAN', label: 'Nome Fantasia',        type: 'string', hint: 'Nome fantasia da empresa conforme Receita Federal' },
+  { base: 'CNPJ_SIT', label: 'Situação Cadastral',   type: 'string', hint: 'Situação cadastral: ATIVA, BAIXADA, INAPTA, etc.' },
+  { base: 'CNPJ_DST', label: 'Data da Situação',     type: 'date',   hint: 'Data da última alteração da situação cadastral' },
+  { base: 'CNPJ_CAP', label: 'Capital Social',       type: 'double', hint: 'Capital social declarado em reais' },
+  { base: 'CNPJ_POR', label: 'Porte da Empresa',     type: 'string', hint: 'Porte: MEI, ME, EPP, DEMAIS' },
+  { base: 'CNPJ_NAT', label: 'Natureza Jurídica',    type: 'string', hint: 'Código e descrição da natureza jurídica' },
+  { base: 'CNPJ_DAB', label: 'Data de Abertura',     type: 'date',   hint: 'Data de início de atividade' },
+  { base: 'CNPJ_MTZ', label: 'Matriz / Filial',      type: 'string', hint: 'Indica se é a MATRIZ ou FILIAL' },
+  { base: 'CNPJ_SMP', label: 'Simples Nacional',     type: 'string', hint: 'Indica adesão ao Simples Nacional: SIM ou NÃO' },
+  { base: 'CNPJ_MEI', label: 'MEI',                  type: 'string', hint: 'Indica se é Microempreendedor Individual: SIM ou NÃO' },
+  { base: 'CNPJ_NAE', label: 'Código CNAE',          type: 'string', hint: 'Código e descrição do CNAE principal' },
+  { base: 'CNPJ_LOG', label: 'Logradouro',           type: 'string', hint: 'Tipo e nome do logradouro' },
+  { base: 'CNPJ_NRO', label: 'Número',               type: 'string', hint: 'Número do endereço' },
+  { base: 'CNPJ_CMP', label: 'Complemento',          type: 'string', hint: 'Complemento do endereço' },
+  { base: 'CNPJ_BAI', label: 'Bairro',               type: 'string', hint: 'Bairro do endereço' },
+  { base: 'CNPJ_CEP', label: 'CEP',                  type: 'string', hint: 'CEP com 8 dígitos' },
+  { base: 'CNPJ_CID', label: 'Município',            type: 'string', hint: 'Nome do município' },
+  { base: 'CNPJ_UF',  label: 'Estado (UF)',          type: 'string', hint: 'Sigla do estado (ex: SP, RJ)' },
+  { base: 'CNPJ_TEL', label: 'Telefone',             type: 'string', hint: 'Telefone de contato' },
+  { base: 'CNPJ_EML', label: 'E-mail',               type: 'string', hint: 'Endereço de e-mail de contato' },
+  { base: 'CNPJ_QSA', label: 'Quadro Societário',   type: 'string', hint: 'Lista de sócios com nome, qualificação e data de entrada' },
+  { base: 'CNPJ_STS', label: 'Status da Busca',      type: 'string', hint: 'Status da última consulta realizada pelo App Busca CNPJ' },
+];
+
+// Mapping from field base to API JSON key
+const JSON_MAPPING = {
+  CNPJ_NUM: 'cnpj',
+  CNPJ_FAN: 'nome_fantasia',
+  CNPJ_SIT: 'situacao_cadastral',
+  CNPJ_DST: 'data_situacao_cadastral',
+  CNPJ_CAP: 'capital_social',
+  CNPJ_POR: 'porte_empresa',
+  CNPJ_NAT: 'natureza_juridica',
+  CNPJ_DAB: 'data_inicio_atividade',
+  CNPJ_MTZ: 'matriz_filial',
+  CNPJ_SMP: 'opcao_simples',
+  CNPJ_MEI: 'opcao_mei',
+  CNPJ_NAE: 'cnae_principal',
+  CNPJ_LOG: 'logradouro',
+  CNPJ_NRO: 'numero',
+  CNPJ_CMP: 'complemento',
+  CNPJ_BAI: 'bairro',
+  CNPJ_CEP: 'cep',
+  CNPJ_CID: 'municipio',
+  CNPJ_UF:  'uf',
+  CNPJ_TEL: 'telefone',
+  CNPJ_EML: 'email',
+  CNPJ_QSA: 'qsa',
+  CNPJ_STS: '__status',
+};
+
+// Fields that start as "Não Salvar" in mapping
+const NOT_SAVED_BY_DEFAULT = ['CNPJ_SMP', 'CNPJ_CMP', 'CNPJ_EML'];
+
+// Global state
+let g = {
+  suffix: null,
+  fieldMap: {},
+  failedFields: [],
+  hintPending: {},
+  placementPending: false,
+  createdCount: 0,
+  orphanFields: [],
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function setLoadingMsg(msg) {
+  const el = document.getElementById('loading-msg');
+  if (el) el.textContent = msg;
+}
+
+function setStepState(stepId, state, subText) {
+  const item = document.getElementById('step-' + stepId);
+  const icon = document.getElementById('step-' + stepId + '-icon');
+  const badge = document.getElementById('step-' + stepId + '-badge');
+  const sub = document.getElementById('step-' + stepId + '-sub');
+
+  if (!item) return;
+
+  item.className = 'step-item ' + state;
+  icon.className = 'step-icon ' + state;
+  badge.className = 'step-badge ' + state;
+
+  const stateLabels = { idle: 'Aguardando', running: 'Processando', done: 'Concluído', error: 'Erro', warn: 'Atenção' };
+  badge.textContent = stateLabels[state] || state;
+
+  if (subText) sub.textContent = subText;
+
+  // Update icon SVG paths based on state
+  if (state === 'done') {
+    icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>';
+  } else if (state === 'error') {
+    icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>';
+  } else if (state === 'warn') {
+    icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>';
+  } else if (state === 'running') {
+    icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>';
+  }
+}
+
+function setProgress(pct, label) {
+  document.getElementById('main-progress-bar').style.width = pct + '%';
+  document.getElementById('main-progress-label').textContent = Math.round(pct) + '%';
+}
+
+function appendFieldLog(msg, type) {
+  const log = document.getElementById('field-log');
+  if (!log) return;
+  const line = document.createElement('div');
+  line.className = type || '';
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function updateFieldSubProgress(done, total) {
+  document.getElementById('field-progress-count').textContent = done + ' / ' + total;
+  document.getElementById('field-progress-text').textContent = 'Criando campos...';
+  const pct = total > 0 ? (done / total) * 100 : 0;
+  document.getElementById('field-progress-bar').style.width = pct + '%';
+}
+
+function callBX24(method, params) {
+  return new Promise((resolve, reject) => {
+    BX24.callMethod(method, params, (result) => {
+      if (result.error()) {
+        reject(result.error());
+      } else {
+        resolve(result.data());
+      }
+    });
+  });
+}
+
+// Run batches of at most 5 concurrent calls
+async function runInBatches(tasks, batchSize) {
+  const results = [];
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const batch = tasks.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(batch.map(t => t()));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
+// ── Main installation flow ────────────────────────────────────────────
+
+async function startInstall() {
+  showScreen('screen-loading');
+  setLoadingMsg('Inicializando SDK do Bitrix24');
+
+  await new Promise(resolve => BX24.init(resolve));
+
+  setLoadingMsg('Verificando permissões de administrador');
+
+  if (!BX24.isAdmin()) {
+    showScreen('screen-error-admin');
+    return;
+  }
+
+  setLoadingMsg('Verificando instalação anterior');
+
+  // Parallel: check existing options + existing fields
+  let existingOptions = null;
+  let existingFields = [];
+
+  try {
+    await Promise.all([
+      (async () => {
+        try {
+          existingOptions = await callBX24('app.option.get', { options: ['app_install_suffix', 'app_install_ts'] });
+        } catch (e) { existingOptions = null; }
+      })(),
+      (async () => {
+        try {
+          const allFields = await callBX24('crm.company.userfield.list', { filter: { 'FIELD_NAME': '%CNPJ_%' } });
+          existingFields = Array.isArray(allFields) ? allFields : [];
+        } catch (e) { existingFields = []; }
+      })(),
+    ]);
+  } catch (e) {}
+
+  const wasInstalled = existingOptions && existingOptions.app_install_suffix;
+  const hasOrphans = existingFields.length > 0;
+
+  if (wasInstalled && hasOrphans) {
+    g.orphanFields = existingFields;
+    showReinstallScreen();
+    return;
+  }
+
+  await runInstallFlow();
+}
+
+function showReinstallScreen() {
+  const listEl = document.getElementById('orphan-field-list');
+  listEl.innerHTML = g.orphanFields.map(f =>
+    `<div>· ${f.FIELD_NAME} — ${f.EDIT_FORM_LABEL?.ru || f.FIELD_NAME}</div>`
+  ).join('');
+  showScreen('screen-reinstall');
+}
+
+async function installChoice(choice) {
+  if (choice === 'reuse') {
+    // Extract suffix from first matching field
+    const first = g.orphanFields[0];
+    if (first && first.FIELD_NAME) {
+      const parts = first.FIELD_NAME.split('_');
+      const lastPart = parts[parts.length - 1];
+      if (/^\d+$/.test(lastPart)) {
+        g.suffix = lastPart;
+      }
+    }
+  }
+  await runInstallFlow(choice === 'reuse');
+}
+
+async function runInstallFlow(reuseFields = false) {
+  showScreen('screen-installing');
+  setProgress(0);
+
+  // ── Step 1: Admin check ───────────────────────────────
+  setStepState('admin', 'running', 'Confirmando permissões...');
+  await sleep(200);
+  if (!BX24.isAdmin()) {
+    setStepState('admin', 'error', 'Sem permissão de administrador');
+    showScreen('screen-error-admin');
+    return;
+  }
+  setStepState('admin', 'done', 'Administrador confirmado');
+  setProgress(10);
+
+  // ── Step 2: Suffix ────────────────────────────────────
+  setStepState('suffix', 'running', 'Gerando sufixo único...');
+  await sleep(150);
+
+  if (!g.suffix) {
+    g.suffix = String(Date.now()).slice(-2).padStart(2, '0');
+  }
+
+  try {
+    await callBX24('app.option.set', {
+      options: {
+        app_install_suffix: g.suffix,
+        app_install_ts: Math.floor(Date.now() / 1000),
+      }
+    });
+    setStepState('suffix', 'done', `Sufixo: ${g.suffix}`);
+    setProgress(20);
+  } catch (e) {
+    setStepState('suffix', 'error', 'Falha ao salvar sufixo — instalação bloqueada');
+    showPartialConclusion({ blockedBy: 'suffix' });
+    return;
+  }
+
+  // ── Step 3: Fields ────────────────────────────────────
+  setStepState('fields', 'running', `Criando 23 campos em CRM_COMPANY...`);
+  document.getElementById('field-progress-container').style.display = 'block';
+  setProgress(25);
+
+  const fieldsToCreate = reuseFields ? [] : FIELD_DEFINITIONS;
+  let createdCount = reuseFields ? FIELD_DEFINITIONS.length : 0;
+
+  if (!reuseFields) {
+    const total = FIELD_DEFINITIONS.length;
+    let done = 0;
+
+    // Process in batches of 5 (2 calls per field = add + hint update)
+    for (let i = 0; i < FIELD_DEFINITIONS.length; i += 5) {
+      const batch = FIELD_DEFINITIONS.slice(i, Math.min(i + 5, FIELD_DEFINITIONS.length));
+
+      await Promise.allSettled(batch.map(async (fd) => {
+        const fieldName = `UF_CRM_${fd.base}_${g.suffix}`;
+        const labelObj = { ru: `${fd.label} - App Busca CNPJ` };
+
+        try {
+          const newField = await callBX24('crm.company.userfield.add', {
+            fields: {
+              ENTITY_ID: 'CRM_COMPANY',
+              FIELD_NAME: `${fd.base}_${g.suffix}`,
+              USER_TYPE_ID: fd.type,
+              EDIT_FORM_LABEL: labelObj,
+              LIST_COLUMN_LABEL: labelObj,
+              SHOW_IN_LIST: 'Y',
+              SHOW_ALWAYS: 'Y',
+              SETTINGS: { SHOW_FIELD_HINT: 'Y' },
+            }
+          });
+
+          g.fieldMap[fd.base] = fieldName;
+          createdCount++;
+
+          // Update HINT (2nd call per field, silent failure)
+          try {
+            await callBX24('crm.company.userfield.update', {
+              id: newField,
+              fields: {
+                HELP_MESSAGE: { ru: fd.hint }
+              }
+            });
+          } catch (hintErr) {
+            g.hintPending[fieldName] = fd.hint;
+          }
+
+          appendFieldLog(`✓ ${fieldName}`, 'ok');
+        } catch (err) {
+          g.failedFields.push({ name: fieldName, error: String(err) });
+          appendFieldLog(`✗ ${fieldName} — falhou`, 'fail');
+        }
+
+        done++;
+        updateFieldSubProgress(done, total);
+        const fieldProgress = 25 + (done / total) * 35;
+        setProgress(fieldProgress);
+      }));
+    }
+  } else {
+    // Reuse: build fieldMap from orphan fields
+    g.orphanFields.forEach(f => {
+      const base = f.FIELD_NAME.replace(/UF_CRM_/, '').replace(/_\d+$/, '');
+      g.fieldMap[base] = f.FIELD_NAME;
+    });
+    appendFieldLog('✓ Campos existentes reutilizados', 'ok');
+    setProgress(60);
+  }
+
+  const fieldState = g.failedFields.length === 0 ? 'done' : 'warn';
+  const fieldSub = g.failedFields.length === 0
+    ? `${createdCount} campos criados com sucesso`
+    : `${createdCount} criados, ${g.failedFields.length} com falha`;
+  setStepState('fields', fieldState, fieldSub);
+  setProgress(62);
+
+  // ── Step 4: Mapping ───────────────────────────────────
+  setStepState('mapping', 'running', 'Salvando configuração padrão...');
+  await sleep(100);
+
+  const fieldMapping = buildDefaultMapping();
+
+  try {
+    await callBX24('app.option.set', {
+      options: {
+        field_mapping: JSON.stringify(fieldMapping),
+        hint_pending: JSON.stringify(g.hintPending),
+        failed_fields: JSON.stringify(g.failedFields),
+      }
+    });
+    setStepState('mapping', 'done', 'Mapeamento padrão salvo');
+    setProgress(75);
+  } catch (e) {
+    setStepState('mapping', 'error', 'Falha ao salvar mapeamento — instalação bloqueada');
+    showPartialConclusion({ blockedBy: 'mapping' });
+    return;
+  }
+
+  // ── Step 5: Placements ────────────────────────────────
+  setStepState('placements', 'running', 'Verificando abas...');
+  setProgress(80);
+
+  const PLACEMENTS = [
+    {
+      placement: 'CRM_DEAL_DETAIL_TAB',
+      title: 'Busca CNPJ',
+      description: 'Consultar e salvar dados da Receita Federal',
+      url: '/painel_consulta.html',
+    },
+    {
+      placement: 'CRM_COMPANY_DETAIL_TAB',
+      title: 'Dados CNPJ',
+      description: 'Visualizar e atualizar dados de CNPJ da empresa',
+      url: '/aba_empresa.html',
+    },
+  ];
+
+  let placementErrors = 0;
+
+  for (const pl of PLACEMENTS) {
+    try {
+      // Check if already registered
+      let alreadyRegistered = false;
+      try {
+        const existing = await callBX24('placement.get', { placement: pl.placement });
+        alreadyRegistered = Array.isArray(existing) && existing.some(p => p.PLACEMENT === pl.placement);
+      } catch (e) { alreadyRegistered = false; }
+
+      if (!alreadyRegistered) {
+        await callBX24('placement.bind', {
+          PLACEMENT: pl.placement,
+          HANDLER: BX24.appOption('app_path') + pl.url,
+          TITLE: pl.title,
+          DESCRIPTION: pl.description,
+        });
+      }
+      appendFieldLog(`✓ Aba ${pl.placement} registrada`, 'ok');
+    } catch (e) {
+      placementErrors++;
+      g.placementPending = true;
+      appendFieldLog(`✗ Falha ao registrar ${pl.placement}`, 'fail');
+    }
+  }
+
+  const placementState = placementErrors === 0 ? 'done' : 'warn';
+  setStepState('placements', placementState,
+    placementErrors === 0 ? '2 abas registradas com sucesso' : `${placementErrors} aba(s) com pendência`);
+
+  // Persist placement_pending
+  try {
+    await callBX24('app.option.set', {
+      options: { placement_pending: g.placementPending ? '1' : '0' }
+    });
+  } catch (e) {}
+
+  setProgress(100);
+  await sleep(400);
+
+  // ── Show conclusion ───────────────────────────────────
+  const hasPendencies = g.failedFields.length > 0 || g.placementPending || Object.keys(g.hintPending).length > 0;
+  if (hasPendencies) {
+    showPartialConclusion({});
+  } else {
+    showSuccessConclusion(createdCount);
+  }
+}
+
+function buildDefaultMapping() {
+  const map = {
+    razao_social: { entity: 'company', field_id: 'TITLE' }
+  };
+
+  FIELD_DEFINITIONS.forEach(fd => {
+    const fieldName = `UF_CRM_${fd.base}_${g.suffix}`;
+    const jsonKey = JSON_MAPPING[fd.base];
+    if (!jsonKey) return;
+
+    const notSaved = NOT_SAVED_BY_DEFAULT.includes(fd.base);
+    map[jsonKey] = {
+      entity: 'company',
+      field_id: notSaved ? null : fieldName,
+      label: fd.label,
+    };
+  });
+
+  return map;
+}
+
+function showSuccessConclusion(fieldCount) {
+  document.getElementById('stat-fields').textContent = fieldCount;
+  document.getElementById('stat-suffix').textContent = '#' + g.suffix;
+  showScreen('screen-success');
+  startCountdown();
+}
+
+function showPartialConclusion({ blockedBy }) {
+  const fieldCount = FIELD_DEFINITIONS.length - g.failedFields.length;
+  document.getElementById('stat-fields-p').textContent = fieldCount;
+  document.getElementById('stat-failed-p').textContent = g.failedFields.length + (g.placementPending ? '+2' : '');
+  document.getElementById('stat-suffix-p').textContent = g.suffix ? '#' + g.suffix : 'N/A';
+
+  const items = document.getElementById('pending-items');
+  items.innerHTML = '';
+
+  if (blockedBy === 'suffix') {
+    addPendingItem(items, 'Falha crítica ao salvar sufixo de instalação. Tente reinstalar.');
+    return;
+  }
+  if (blockedBy === 'mapping') {
+    addPendingItem(items, 'Falha ao salvar mapeamento padrão. Use Reparar Instalação.');
+  }
+
+  g.failedFields.forEach(f => {
+    addPendingItem(items, `Campo não criado: ${f.name}`);
+  });
+
+  if (Object.keys(g.hintPending).length > 0) {
+    addPendingItem(items, `${Object.keys(g.hintPending).length} campo(s) sem descrição (HINT) — não crítico`);
+  }
+
+  if (g.placementPending) {
+    addPendingItem(items, 'Uma ou mais abas não foram registradas no CRM');
+  }
+
+  showScreen('screen-partial');
+}
+
+function addPendingItem(container, text) {
+  const el = document.createElement('div');
+  el.className = 'pending-item';
+  el.textContent = text;
+  container.appendChild(el);
+}
+
+// ── Countdown (auto-redirect) ─────────────────────────────────────────
+let countdownInterval = null;
+
+function startCountdown() {
+  let secs = 5;
+  const bar = document.getElementById('countdown-bar');
+  const text = document.getElementById('countdown-text');
+
+  countdownInterval = setInterval(() => {
+    secs--;
+    bar.style.width = ((secs / 5) * 100) + '%';
+    text.textContent = secs > 0
+      ? `Redirecionando em ${secs} segundo${secs !== 1 ? 's' : ''}...`
+      : 'Redirecionando...';
+    if (secs <= 0) {
+      clearInterval(countdownInterval);
+      openSettings();
+    }
+  }, 1000);
+}
+
+// ── Actions ───────────────────────────────────────────────────────────
+
+function openSettings() {
+  if (countdownInterval) clearInterval(countdownInterval);
+  try {
+    BX24.openApplication({ painel: 'configuracoes' });
+  } catch (e) {
+    // Fallback: try to navigate via placement
+    try {
+      BX24.placement.call('open', { url: '/painel_configuracoes.html' });
+    } catch (e2) {
+      alert('Instalação concluída! Abra o Painel de Configurações pelo menu do app.');
+    }
+  }
+}
+
+async function retryInstall() {
+  // Reset state
+  g.failedFields = [];
+  g.hintPending = {};
+  g.placementPending = false;
+  g.createdCount = 0;
+
+  await runInstallFlow(false);
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────
+startInstall().catch(err => {
+  console.error('[AppBuscaCNPJ] Erro fatal na instalação:', err);
+  showScreen('screen-error-admin'); // fallback
+});
+</script>
+</body>
+</html>
