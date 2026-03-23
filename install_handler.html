@@ -942,7 +942,7 @@ async function startInstall() {
     await Promise.all([
       (async () => {
         try {
-          existingOptions = await callBX24('app.option.get', { options: ['app_install_suffix', 'app_install_ts'] });
+          existingOptions = await appOptionGet(['app_install_suffix', 'app_install_ts']);
         } catch (e) { existingOptions = null; }
       })(),
       (async () => {
@@ -1007,20 +1007,12 @@ async function runInstallFlow(reuseFields = false) {
     g.suffix = String(Date.now()).slice(-4) + Math.floor(Math.random() * 10);
   }
 
-  try {
-    await callBX24('app.option.set', {
-      options: {
-        app_install_suffix: g.suffix,
-        app_install_ts: Math.floor(Date.now() / 1000),
-      }
-    });
-    setStepState('suffix', 'done', `Sufixo: ${g.suffix}`);
-    setProgress(20);
-  } catch (e) {
-    setStepState('suffix', 'error', 'Falha ao salvar sufixo — instalação bloqueada');
-    showPartialConclusion({ blockedBy: 'suffix' });
-    return;
-  }
+  await appOptionSet({
+    app_install_suffix: g.suffix,
+    app_install_ts: String(Math.floor(Date.now() / 1000)),
+  });
+  setStepState('suffix', 'done', `Sufixo: ${g.suffix}`);
+  setProgress(20);
 
   // ── Step 3: Fields (informativo — campos criados manualmente no Painel de Configurações)
   setStepState('fields', 'done', 'Use o botão "+" no Painel de Configurações para criar os campos');
@@ -1032,25 +1024,13 @@ async function runInstallFlow(reuseFields = false) {
 
   const fieldMapping = buildDefaultMapping();
 
-  try {
-    const res = await callBX24('app.option.set', {
-      options: {
-        field_mapping: JSON.stringify(fieldMapping),
-        hint_pending: JSON.stringify(g.hintPending),
-        failed_fields: JSON.stringify(g.failedFields),
-      }
-    });
-    // bx24 app.option.set doesn't always throw an error on failure, sometimes it returns error in response
-    if (res && res.error) {
-      throw new Error(res.error_description || res.error);
-    }
-    setStepState('mapping', 'done', 'Mapeamento padrão salvo');
-    setProgress(75);
-  } catch (e) {
-    setStepState('mapping', 'error', 'Falha ao salvar mapeamento — instalação bloqueada');
-    showPartialConclusion({ blockedBy: 'mapping' });
-    return;
-  }
+  await appOptionSet({
+    field_mapping: JSON.stringify(fieldMapping),
+    hint_pending: JSON.stringify(g.hintPending),
+    failed_fields: JSON.stringify(g.failedFields),
+  });
+  setStepState('mapping', 'done', 'Mapeamento padrão salvo');
+  setProgress(75);
 
   // ── Step 5: Placements ────────────────────────────────
   setStepState('placements', 'running', 'Verificando abas...');
@@ -1123,11 +1103,7 @@ async function runInstallFlow(reuseFields = false) {
     placementErrors === 0 ? '2 abas registradas com sucesso' : `${placementErrors} aba(s) com pendência`);
 
   // Persist placement_pending
-  try {
-    await callBX24('app.option.set', {
-      options: { placement_pending: g.placementPending ? '1' : '0' }
-    });
-  } catch (e) {}
+  await appOptionSet({ placement_pending: g.placementPending ? '1' : '0' });
 
   setProgress(100);
   await sleep(400);
