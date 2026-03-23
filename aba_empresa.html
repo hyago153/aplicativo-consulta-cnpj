@@ -1537,7 +1537,7 @@ async function loadInitialData() {
       // Dev/fallback sem placement real — ainda carrega o field_mapping para o save funcionar
       renderDevMode();
       try {
-        const devOpts = await b24Call('app.option.get', { options: ['field_mapping', 'app_install_suffix'] });
+        const devOpts = await appOptionGet(['field_mapping', 'app_install_suffix']);
         let devMapping = devOpts.field_mapping || {};
         if (typeof devMapping === 'string') {
           try { devMapping = JSON.parse(devMapping); } catch (_) { devMapping = {}; }
@@ -1580,6 +1580,11 @@ async function loadInitialData() {
       } catch (e) {
         console.warn('[BuscaCNPJ:Empresa] app.option.get individual também falhou:', e);
       }
+    }
+    // Fallback final: localStorage (quando scope 'app' não está disponível)
+    if (!batchResult.options || !batchResult.options.data) {
+      const lsData = await appOptionGet(optionsKeys);
+      if (Object.keys(lsData).length > 0) batchResult.options = { data: lsData };
     }
 
     if (batchResult.options && batchResult.options.data) {
@@ -1815,13 +1820,11 @@ async function salvarCache(cnpjRaw, dados, ts) {
   if (!STATE.companyId) return;
   try {
     const cacheKey = `company_${STATE.companyId}_last_query`;
-    await b24Call('app.option.set', {
-      options: {
-        [cacheKey]: {
-          cnpj: formatCNPJ(cnpjRaw),
-          dados_completos: dados,
-          timestamp: ts,
-        }
+    await appOptionSet({
+      [cacheKey]: {
+        cnpj: formatCNPJ(cnpjRaw),
+        dados_completos: dados,
+        timestamp: ts,
       }
     });
   } catch (e) {
@@ -1855,7 +1858,7 @@ async function doSave() {
   try {
     // Garantir field_mapping atualizado diretamente do Bitrix24 antes de salvar
     try {
-      const freshOpts = await b24Call('app.option.get', {});
+      const freshOpts = await appOptionGet([]);
       if (freshOpts && freshOpts.field_mapping) {
         let fm = freshOpts.field_mapping;
         if (typeof fm === 'string') { try { fm = JSON.parse(fm); } catch (_) { fm = null; } }

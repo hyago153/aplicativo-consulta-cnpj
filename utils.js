@@ -87,3 +87,59 @@ function b24Batch(calls) {
     });
   });
 }
+
+/* ─────────────────────────────────────────────
+   APP OPTIONS — com fallback para localStorage
+   Garante funcionamento mesmo sem o scope 'app'
+───────────────────────────────────────────── */
+const _LS_OPT = 'bx24_opt_';
+
+function _lsSave(key, value) {
+  try {
+    localStorage.setItem(_LS_OPT + key, typeof value === 'string' ? value : JSON.stringify(value));
+  } catch (_) {}
+}
+
+function _lsLoad(key) {
+  try { return localStorage.getItem(_LS_OPT + key); } catch (_) { return null; }
+}
+
+function _lsLoadAll() {
+  const out = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(_LS_OPT)) out[k.slice(_LS_OPT.length)] = localStorage.getItem(k);
+    }
+  } catch (_) {}
+  return out;
+}
+
+/**
+ * Salva opções via app.option.set com fallback para localStorage.
+ * Nunca lança exceção — degradação silenciosa se o scope 'app' estiver ausente.
+ */
+async function appOptionSet(options) {
+  for (const [k, v] of Object.entries(options)) _lsSave(k, v);
+  try { await callBX24('app.option.set', { options }); } catch (_) {}
+}
+
+/**
+ * Lê opções via app.option.get com fallback para localStorage.
+ * @param {string[]|null} keys - array de chaves, ou [] para "todas"
+ * @returns {Object} objeto de opções (nunca lança exceção)
+ */
+async function appOptionGet(keys) {
+  const getAll = !Array.isArray(keys) || keys.length === 0;
+  try {
+    const result = await callBX24('app.option.get', getAll ? {} : { options: keys });
+    if (result && typeof result === 'object' && Object.keys(result).length > 0) {
+      for (const [k, v] of Object.entries(result)) { if (v != null) _lsSave(k, v); }
+      return result;
+    }
+  } catch (_) {}
+  if (getAll) return _lsLoadAll();
+  const out = {};
+  for (const k of keys) { const v = _lsLoad(k); if (v !== null) out[k] = v; }
+  return out;
+}

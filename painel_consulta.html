@@ -1225,6 +1225,11 @@ async function loadInitialData() {
         console.warn('[BuscaCNPJ] app.option.get individual também falhou:', e);
       }
     }
+    // Fallback final: localStorage (quando scope 'app' não está disponível)
+    if (!batchResult.options || !batchResult.options.data) {
+      const lsData = await appOptionGet(optionsKeys);
+      if (Object.keys(lsData).length > 0) batchResult.options = { data: lsData };
+    }
 
     if (batchResult.options && batchResult.options.data) {
       const opts = batchResult.options.data;
@@ -1441,13 +1446,11 @@ async function salvarCache(cnpjRaw, dados, ts) {
   if (!STATE.dealId) return;
   try {
     const cacheKey = `deal_${STATE.dealId}_last_query`;
-    await b24Call('app.option.set', {
-      options: {
-        [cacheKey]: {
-          cnpj: formatCNPJ(cnpjRaw),
-          dados_completos: dados,
-          timestamp: ts,
-        }
+    await appOptionSet({
+      [cacheKey]: {
+        cnpj: formatCNPJ(cnpjRaw),
+        dados_completos: dados,
+        timestamp: ts,
       }
     });
   } catch (e) {
@@ -1499,7 +1502,7 @@ async function doSave() {
 
     // Garantir field_mapping atualizado diretamente do Bitrix24 antes de salvar
     try {
-      const freshOpts = await b24Call('app.option.get', {});
+      const freshOpts = await appOptionGet([]);
       if (freshOpts && freshOpts.field_mapping) {
         let fm = freshOpts.field_mapping;
         if (typeof fm === 'string') { try { fm = JSON.parse(fm); } catch (_) { fm = null; } }

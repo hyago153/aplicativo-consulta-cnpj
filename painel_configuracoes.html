@@ -811,7 +811,7 @@ async function inicializar() {
 
   // Chamadas paralelas de inicialização usando Promise.allSettled para evitar falha total
   const results = await Promise.allSettled([
-    callBX24('app.option.get', { options: ['app_install_suffix', 'field_mapping', 'hint_pending', 'failed_fields'] }),
+    appOptionGet(['app_install_suffix', 'field_mapping', 'hint_pending', 'failed_fields']),
     callBX24('crm.company.fields', {}),
     callBX24('crm.company.userfield.list', { filter: { ENTITY_ID: 'CRM_COMPANY' } }),
     callBX24('placement.get', { PLACEMENT: 'CRM_DEAL_DETAIL_TAB' }),
@@ -1145,7 +1145,7 @@ async function criarCampo(key, btnEl) {
     } catch (hintErr) {
       // Degradação silenciosa
       state.hintPending[key] = { fieldId, ufName };
-      await callBX24('app.option.set', { options: { hint_pending: state.hintPending } });
+      await appOptionSet({ hint_pending: state.hintPending });
     }
 
     // Adicionar ao estado local
@@ -1167,9 +1167,7 @@ async function criarCampo(key, btnEl) {
 
     // Auto-salvar mapeamento após criação de campo
     try {
-      await callBX24('app.option.set', {
-        options: { field_mapping: JSON.stringify(state.fieldMapping) }
-      });
+      await appOptionSet({ field_mapping: JSON.stringify(state.fieldMapping) });
     } catch (_) { /* silencioso — usuário ainda pode salvar manualmente */ }
 
     fecharTooltip();
@@ -1217,9 +1215,7 @@ async function salvarConfiguracoes() {
   btn.innerHTML = '<span class="spinner-inline"></span> Salvando…';
 
   try {
-    await callBX24('app.option.set', {
-      options: { field_mapping: JSON.stringify(state.fieldMapping) }
-    });
+    await appOptionSet({ field_mapping: JSON.stringify(state.fieldMapping) });
     state.hasChanges = false;
     document.getElementById('unsaved-indicator').classList.remove('visible');
     atualizarContador();
@@ -1293,7 +1289,7 @@ async function repararInstalacao() {
 
   // Salvar hint_pending atualizado
   if (Object.keys(state.hintPending).length < Object.keys(state.hintPending).length) {
-    await callBX24('app.option.set', { options: { hint_pending: state.hintPending } });
+    await appOptionSet({ hint_pending: state.hintPending });
   }
 
   adicionarLog(log, `Reparo concluído (${done}/${tasks.length} tarefas)`, 'ok');
