@@ -818,35 +818,35 @@ async function inicializar() {
     callBX24('placement.get', { PLACEMENT: 'CRM_COMPANY_DETAIL_TAB' }),
   ]);
 
-  const optRes = results[0].status === 'fulfilled' ? results[0].value : { result: {} };
-  const fieldsRes = results[1].status === 'fulfilled' ? results[1].value : { result: {} };
-  const ufRes = results[2].status === 'fulfilled' ? results[2].value : { result: [] };
-  const placDealRes = results[3].status === 'fulfilled' ? results[3].value : { result: [] };
-  const placCompRes = results[4].status === 'fulfilled' ? results[4].value : { result: [] };
+  const optRes      = results[0].status === 'fulfilled' ? results[0].value : {};
+  const fieldsRes   = results[1].status === 'fulfilled' ? results[1].value : {};
+  const ufRes       = results[2].status === 'fulfilled' ? results[2].value : [];
+  const placDealRes = results[3].status === 'fulfilled' ? results[3].value : [];
+  const placCompRes = results[4].status === 'fulfilled' ? results[4].value : [];
 
   // Sufixo
-  state.suffix = optRes.result?.app_install_suffix || null;
+  state.suffix = optRes?.app_install_suffix || null;
 
-  // Campos nativos
-  const compFields = fieldsRes.result || {};
+  // Campos nativos — callBX24('crm.company.fields') retorna objeto plano de campos
+  const compFields = fieldsRes || {};
   state.companyFields = Object.entries(compFields)
     .filter(([k]) => !k.startsWith('UF_CRM_'))
     .map(([k, v]) => ({ id: k, label: v.title || v.formLabel || v.listLabel || k }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
-  // Campos UF_CRM_
-  const ufList = ufRes.result || [];
+  // Campos UF_CRM_ — callBX24('crm.company.userfield.list') retorna array diretamente
+  const ufList = Array.isArray(ufRes) ? ufRes : [];
   state.userFields = ufList
     .filter(f => f.ENTITY_ID === 'CRM_COMPANY')
     .map(f => ({ id: f.FIELD_NAME, label: f.EDIT_FORM_LABEL || f.FIELD_NAME }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
   // hint_pending e failed_fields
-  state.hintPending = optRes.result?.hint_pending || {};
-  state.failedFields = optRes.result?.failed_fields || [];
+  state.hintPending  = optRes?.hint_pending  || {};
+  state.failedFields = optRes?.failed_fields || [];
 
   // Mapeamento salvo
-  let savedMapping = optRes.result?.field_mapping || {};
+  let savedMapping = optRes?.field_mapping || {};
   if (typeof savedMapping === 'string') {
     try { savedMapping = JSON.parse(savedMapping); } catch (_) { savedMapping = {}; }
   }
@@ -857,9 +857,9 @@ async function inicializar() {
     construirMapeamentoPadrao();
   }
 
-  // Status das abas
-  atualizarBadgePlacement('deal', placDealRes.result);
-  atualizarBadgePlacement('company', placCompRes.result);
+  // Status das abas — callBX24('placement.get') retorna array diretamente
+  atualizarBadgePlacement('deal', Array.isArray(placDealRes) ? placDealRes : []);
+  atualizarBadgePlacement('company', Array.isArray(placCompRes) ? placCompRes : []);
 
   // Renderizar
   renderizarCards();
@@ -1130,9 +1130,10 @@ async function criarCampo(key, btnEl) {
       }
     });
 
-    if (addRes.error) throw new Error(addRes.error_description || addRes.error);
+    // callBX24 retorna dados diretamente; crm.company.userfield.add retorna o ID do campo criado
+    if (addRes && typeof addRes === 'object' && addRes.error) throw new Error(addRes.error_description || addRes.error);
 
-    const fieldId = addRes.result;
+    const fieldId = addRes;
     const ufName = `UF_CRM_${fieldName}`;
 
     // Chamada 2: atualizar HINT (silenciosa em caso de falha)
@@ -1315,8 +1316,9 @@ async function repararPlacement(placement, tipo) {
     DESCRIPTION: 'Consulta e salvamento de dados de CNPJ',
   });
   // Reler status
+  // callBX24 retorna dados diretamente; placement.get retorna array de placements
   const res = await callBX24('placement.get', { PLACEMENT: placement });
-  atualizarBadgePlacement(tipo, res.result);
+  atualizarBadgePlacement(tipo, Array.isArray(res) ? res : []);
 }
 
 async function atualizarBadgesPlacement() {
@@ -1324,8 +1326,8 @@ async function atualizarBadgesPlacement() {
     callBX24('placement.get', { PLACEMENT: 'CRM_DEAL_DETAIL_TAB' }),
     callBX24('placement.get', { PLACEMENT: 'CRM_COMPANY_DETAIL_TAB' }),
   ]);
-  atualizarBadgePlacement('deal', dealRes.result);
-  atualizarBadgePlacement('company', compRes.result);
+  atualizarBadgePlacement('deal',    Array.isArray(dealRes) ? dealRes : []);
+  atualizarBadgePlacement('company', Array.isArray(compRes) ? compRes : []);
 }
 
 function adicionarLog(container, text, tipo) {
@@ -1417,18 +1419,7 @@ function restaurarMapeamento() {
 // ──────────────────────────────────────────────────────────
 // UTILITÁRIOS BX24
 // ──────────────────────────────────────────────────────────
-// callBX24 movido para utils.js (sobrescrevendo para compatibilidade com painel_configuracoes)
-function callBX24(method, params) {
-  return new Promise((resolve, reject) => {
-    BX24.callMethod(method, params, (res) => {
-      if (res.error()) {
-        reject(new Error(res.error().error_description || res.error().error || 'Erro desconhecido'));
-      } else {
-        resolve({ result: res.data(), error: null });
-      }
-    });
-  });
-}
+// callBX24 usa a versão do utils.js (retorna dados diretamente, sem embrulho em {result})
 
 // ──────────────────────────────────────────────────────────
 // LOADING
