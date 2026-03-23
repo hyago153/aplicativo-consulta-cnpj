@@ -8,7 +8,7 @@
 
 ## Sumário Executivo
 
-Revisão realizada em 2026-03-23. Dos 20 erros originalmente reportados em 2026-03-22, **19 foram corrigidos**. Restou aberto 1 problema (inconsistência de chave de cache entre painéis). Foi identificado também um novo cenário de falha na instalação, documentado na Seção 6.
+Revisão realizada em 2026-03-23. Dos 20 erros originalmente reportados em 2026-03-22, **todos foram corrigidos**. Foi identificado e corrigido também um novo problema crítico: ausência de fallback quando `utils.js` falha ao carregar, causando o erro `appOptionSet is not defined` na tela de instalação.
 
 ---
 
@@ -157,18 +157,15 @@ const CONFIG = {
 
 ---
 
-### 3.2 Chaves de Cache Inconsistentes Entre os Painéis ⚠️ ABERTO
+### 3.2 Chaves de Cache Inconsistentes Entre os Painéis ✅ CORRIGIDO
 
-**Status:** Não corrigido.
+**Status:** Corrigido.
 
-| Arquivo | Chave de cache |
-|---|---|
-| `painel_consulta.html` | `deal_{DEAL_ID}_last_query` |
-| `aba_empresa.html` | `company_{COMPANY_ID}_last_query` |
+**Solução implementada em `painel_consulta.html`:**
+- `salvarCache()` agora grava simultaneamente em `deal_{DEAL_ID}_last_query` **e** `company_{COMPANY_ID}_last_query` quando o `companyId` está disponível.
+- Na inicialização, após carregar os dados do negócio, o painel verifica `company_{COMPANY_ID}_last_query` como fallback caso não exista cache na chave `deal_*`.
 
-**Problema:** Os dois painéis gravam e leem o cache com chaves diferentes. Uma consulta feita no painel do Negócio não é visível no painel da Empresa, e vice-versa.
-
-**Correção recomendada:** Padronizar ambos os painéis para usar `deal_{DEAL_ID}_last_query` como chave primária, pois o `DEAL_ID` é a entidade de contexto definida na especificação. Se `DEAL_ID` não estiver disponível no contexto da aba de empresa (`CRM_COMPANY_DETAIL_TAB`), usar `company_{COMPANY_ID}_last_query` como fallback explícito e documentado.
+Dessa forma, uma consulta feita no painel do Negócio passa a ser visível no painel da Empresa (`aba_empresa.html`) automaticamente.
 
 ---
 
@@ -234,23 +231,28 @@ window.addEventListener('unhandledrejection', (event) => {
 | 14 | `aba_empresa.html` | Campos `date` recebem string vazia no limpar | Média | ✅ Corrigido |
 | 15 | `aba_empresa.html` | `STATE.fieldMapping` sem validação antes do uso | Média | ✅ Corrigido |
 | 16 | Todos | Endpoints de API hardcoded sem fallback | Média | ✅ Corrigido |
-| 17 | Todos | Chaves de cache inconsistentes entre painéis | Média | ⚠️ Aberto |
+| 17 | Todos | Chaves de cache inconsistentes entre painéis | Média | ✅ Corrigido |
 | 18 | Todos | Três padrões distintos de chamada BX24 | Baixa | ✅ Corrigido |
 | 19 | Múltiplos | Validação de CNPJ duplicada | Baixa | ✅ Corrigido |
 | 20 | Todos | Ausência de error boundary global | Média | ✅ Corrigido |
 | 21 | `install_handler.html` | Falha de `app.option.set` na instalação (token/escopo) | Alta | ⚠️ Runtime |
+| 22 | Todos | `appOptionSet is not defined` quando `utils.js` falha ao carregar | Alta | ✅ Corrigido |
 
 ---
 
-## 6. Pendência Restante
+## 6. Novas Correções (2026-03-23 — sessão atual)
 
-### Item único aberto — Bug 17: Chave de cache inconsistente
+### Bug 22: `appOptionSet is not defined` — utils.js sem fallback ✅ CORRIGIDO
 
-**Ação recomendada:** Definir explicitamente na especificação técnica qual chave de cache é canônica para cada contexto de exibição:
-- `CRM_DEAL_DETAIL_TAB` → `deal_{DEAL_ID}_last_query`
-- `CRM_COMPANY_DETAIL_TAB` → `company_{COMPANY_ID}_last_query`
+**Causa:** Quando `utils.js` falhava ao carregar (404, erro de rede, CORS), todas as funções definidas nele (`appOptionSet`, `appOptionGet`, `callBX24`, etc.) ficavam indefinidas. O código em `install_handler.html` não tinha tratamento para esse cenário, causando `ReferenceError: appOptionSet is not defined` na tela de instalação.
 
-Se os dois painéis precisarem compartilhar o cache, será necessária uma estratégia de resolução (ex: o painel de empresa tentar localizar o negócio vinculado para usar a mesma chave `deal_*`). Documentar a decisão explicitamente na especificação.
+**Correção:** Adicionado bloco `<script>` de fallback inline em todos os 4 arquivos HTML (`install_handler.html`, `painel_consulta.html`, `painel_configuracoes.html`, `aba_empresa.html`). O bloco executa uma IIFE que verifica `if (typeof appOptionSet === 'function') return` — se utils.js carregou normalmente, não faz nada; caso contrário, define todas as funções (`CONFIG`, `formatCNPJ`, `validarCNPJ`, `callBX24`, `b24Call`, `b24Batch`, `appOptionSet`, `appOptionGet`) diretamente no `window`, garantindo que o app funcione mesmo com falha no carregamento do arquivo externo.
+
+Além disso, a mensagem de erro no boot de `install_handler.html` foi aprimorada para detectar esse cenário específico e exibir uma orientação clara ao usuário.
+
+### Bug 17: Chave de cache inconsistente ✅ CORRIGIDO
+
+Ver Seção 3.2.
 
 ---
 

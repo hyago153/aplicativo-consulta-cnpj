@@ -6,6 +6,25 @@
 <title>App Busca CNPJ — Aba Empresa</title>
 <script src="https://api.bitrix24.com/api/v1/"></script>
 <script src="utils.js"></script>
+<script>
+(function () {
+  if (typeof appOptionSet === 'function') return;
+  console.warn('[AppBuscaCNPJ] utils.js não foi carregado — usando fallback inline.');
+  var _LS = 'bx24_opt_';
+  function lsSave(k, v) { try { localStorage.setItem(_LS + k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (_) {} }
+  function lsLoad(k)    { try { return localStorage.getItem(_LS + k); } catch (_) { return null; } }
+  function lsAll()      { var o = {}; try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf(_LS) === 0) o[k.slice(_LS.length)] = localStorage.getItem(k); } } catch (_) {} return o; }
+  window.CONFIG = { API_OPENCNPJ: 'https://api.opencnpj.org/cnpj/', API_BRASILAPI: 'https://brasilapi.com.br/api/cnpj/v1/', CACHE_TTL_MS: 7 * 24 * 60 * 60 * 1000 };
+  window.formatCNPJ = function (r) { r = r.replace(/\D/g,'').slice(0,14); if (r.length===14) return r.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5'); if (r.length>8) return r.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/,function(_,a,b,c,d){return a+'.'+b+'.'+c+'/'+d;}); if (r.length>5) return r.replace(/^(\d{2})(\d{3})(\d+)$/,function(_,a,b,c){return a+'.'+b+'.'+c;}); if (r.length>2) return r.replace(/^(\d{2})(\d+)$/,function(_,a,b){return a+'.'+b;}); return r; };
+  window.validarCNPJ = function (cnpj) { var n=cnpj.replace(/\D/g,''); if (n.length!==14||/^(\d)\1+$/.test(n)) return false; function c(l){var s=0,p=l-7; for(var i=l;i>=1;i--){s+=parseInt(n.charAt(l-i),10)*p--;if(p<2)p=9;} var r=s%11<2?0:11-(s%11); return r===parseInt(n.charAt(l),10);} return c(12)&&c(13); };
+  window.callBX24 = function (method, params) { return new Promise(function (resolve, reject) { BX24.callMethod(method, params||{}, function (result) { if (result.error()) { var e=new Error(result.error().error_description||result.error().error||'Erro desconhecido'); e.rawError=result.error(); reject(e); } else { resolve(result.data()); } }); }); };
+  window.b24Call  = window.callBX24;
+  window.b24Batch = function (calls) { return new Promise(function (resolve) { BX24.callBatch(calls, function (results) { var o={}; for (var k in results) { if (results[k].error()) o[k]={error:results[k].error()}; else o[k]={data:results[k].data()}; } resolve(o); }); }); };
+  window.appOptionSet = async function (options) { for (var _ref of Object.entries(options)) lsSave(_ref[0], _ref[1]); try { await window.callBX24('app.option.set', { options: options }); } catch (_) {} };
+  window.appOptionGet = async function (keys) { var all=!Array.isArray(keys)||keys.length===0; try { var r=await window.callBX24('app.option.get', all?{}:{options:keys}); if (r&&typeof r==='object'&&Object.keys(r).length>0){for(var _r of Object.entries(r)){if(_r[1]!=null)lsSave(_r[0],_r[1]);}return r;} } catch (_) {} if (all) return lsAll(); var o={}; for (var k of keys){var v=lsLoad(k);if(v!==null)o[k]=v;} return o; };
+  window.addEventListener('unhandledrejection', function (e) { console.error('Erro não tratado:', e.reason); });
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ─── Reset & Variables ─── */
